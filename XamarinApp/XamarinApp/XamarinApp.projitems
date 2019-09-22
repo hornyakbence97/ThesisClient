@@ -17,14 +17,52 @@
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Configuration.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Events\Events.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Exception\OperationFailedException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HelloWordPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)LongRunningTask.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Input\UserDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\UserService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UI\BaseViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Exception\ExceptionPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)UI\MainPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)UI\MainPageViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UI\NameProvider.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)UI\NetworkEntry.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)UI\NetworkEntryViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WebSocket\WebSocketProcesser.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)HelloWordPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)UI\MainPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)UI\NetworkEntry.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)UI\NameProvider.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)UI\Exception\ExceptionPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </EmbeddedResource>
   </ItemGroup>
