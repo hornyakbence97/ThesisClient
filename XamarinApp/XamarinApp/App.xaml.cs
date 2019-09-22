@@ -70,6 +70,19 @@ namespace XamarinApp
                     Configuration.UserTextFileName);
 
             if (File.Exists(fileName)) File.Delete(fileName);
+
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                Configuration.DefaultFileFolder);
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var file = Path.Combine(directory, Guid.NewGuid().ToString());
+
+            File.WriteAllText(file, "TestFile" + DateTime.UtcNow);
         }
 
         protected override void OnStart()

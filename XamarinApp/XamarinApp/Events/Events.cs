@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace XamarinApp.Events
+﻿namespace XamarinApp.Events
 {
     public static class Events
     {
@@ -11,5 +7,8 @@ namespace XamarinApp.Events
         public static string CancelledTask = "CancelledTask";
         public static string Message = "Message";
         public static string WebSocketReceive = "WebSocketReceive";
+
+        public static string StartService = "StartService";
+        public static string StopService = "StopService";
     }
 }

@@ -3,10 +3,54 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="XamarinApp.UI.NetworkEntry">
     <ContentPage.Content>
-        <StackLayout>
-            <Label Text="{Binding UserName}"
-                VerticalOptions="CenterAndExpand" 
-                HorizontalOptions="CenterAndExpand" />
-        </StackLayout>
+        <AbsoluteLayout HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+            <StackLayout AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1">
+                <!-- FROM !-->
+                <StackLayout
+                    VerticalOptions="CenterAndExpand" >
+                    <StackLayout Orientation="Horizontal">
+                        <Label Text="Hello "></Label>
+                        <Label Text="{Binding Path=UserName}"/>
+                    </StackLayout>
+                    <Label Text="Please login to a network:"></Label>
+                    <StackLayout Orientation="Horizontal">
+                        <Label Text="NetworkId: "></Label>
+                        <Entry
+                            Text="{Binding Path=NetworkId, Mode=TwoWay}"
+                            HorizontalOptions="FillAndExpand"></Entry>
+                    </StackLayout>
+                    <StackLayout Orientation="Horizontal">
+                        <Label Text="Password: "></Label>
+                        <Entry
+                            Text="{Binding Path=NetworkPassword, Mode=TwoWay}"
+                            IsPassword="True"
+                            HorizontalOptions="FillAndExpand"></Entry>
+                    </StackLayout>
+                    <Button Text="Login" Clicked="LoginNetwork"></Button>
+                    <Label Text="Or create a new one:"></Label>
+                    <StackLayout Orientation="Horizontal">
+                        <Label Text="Network Name: "></Label>
+                        <Entry
+                            Text="{Binding Path=NetworkName, Mode=TwoWay}"
+                            HorizontalOptions="FillAndExpand"></Entry>
+                    </StackLayout>
+                    <StackLayout Orientation="Horizontal">
+                        <Label Text="Password: "></Label>
+                        <Entry
+                            Text="{Binding Path=NetworkPassword, Mode=TwoWay}"
+                            HorizontalOptions="FillAndExpand"
+                            IsPassword="True"></Entry>
+                    </StackLayout>
+                    <Button Text="Create new network" Clicked="CreateNetwork"></Button>
+                </StackLayout>
+                <!-- TO !-->
+            </StackLayout>
+            <StackLayout IsVisible="True" Padding="12"
+                         AbsoluteLayout.LayoutFlags="PositionProportional"
+                         AbsoluteLayout.LayoutBounds="0.5,0.5,-1,-1">
+                <ActivityIndicator IsRunning="{Binding IsBusy}" Color ="Red"/>
+                <Label Text="{Binding ShowText}"></Label>
+            </StackLayout>
+        </AbsoluteLayout>
     </ContentPage.Content>
 </ContentPage>

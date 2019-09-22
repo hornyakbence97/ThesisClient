@@ -16,7 +16,7 @@ namespace XamarinApp.UI
 
         private void Button_OnClicked(object sender, EventArgs e)
         {
-            ViewModel.AddMoreInformation(displayName.Text);
+            ViewModel.AddMoreInformation(displayName.Text, int.Parse(maxSpace.Text));
             Navigation.PopModalAsync();
         }
     }

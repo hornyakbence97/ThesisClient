@@ -1,13 +1,9 @@
-﻿using System;
-
-using Android.App;
+﻿using Android.App;
 using Android.Content.PM;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using Android.OS;
 using Xamarin.Forms;
 using Android.Content;
+using XamarinApp.Services;
 
 namespace XamarinApp.Droid
 {
@@ -28,13 +24,20 @@ namespace XamarinApp.Droid
 
         private void InitServicesSubscribes()
         {
-            MessagingCenter.Subscribe<HelloWordPage>(this, Events.Events.StartLongRunningTask, StartService);
-            MessagingCenter.Subscribe<HelloWordPage>(this, Events.Events.StopLongRunningTask, StopService);
+            MessagingCenter.Subscribe<EventsClass>(this, Events.Events.StartService, StartTheService);
+            MessagingCenter.Subscribe<EventsClass>(this, Events.Events.StopService, StopTheService);
         }
 
-        private void StartService(HelloWordPage obj)
+        private void StopTheService(EventsClass obj)
         {
-            var intent = new Intent(this, typeof(AndroidService));
+            var intent = new Intent(this, typeof(VirtualNetworkService));
+
+            StopService(intent);
+        }
+
+        private void StartTheService(EventsClass events)
+        {
+            var intent = new Intent(this, typeof(VirtualNetworkService));
 
             if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O)
             {
@@ -46,10 +49,24 @@ namespace XamarinApp.Droid
             }
         }
 
-        private void StopService(HelloWordPage obj)
-        {
-            var intent = new Intent(this, typeof(AndroidService));
-            StopService(intent);
-        }
+        //private void StartService(HelloWordPage obj)
+        //{
+        //    var intent = new Intent(this, typeof(AndroidService));
+
+        //    if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O)
+        //    {
+        //        StartForegroundService(intent);
+        //    }
+        //    else
+        //    {
+        //        StartService(intent);
+        //    }
+        //}
+
+        //private void StopService(HelloWordPage obj)
+        //{
+        //    var intent = new Intent(this, typeof(AndroidService));
+        //    StopService(intent);
+        //}
     }
 }
