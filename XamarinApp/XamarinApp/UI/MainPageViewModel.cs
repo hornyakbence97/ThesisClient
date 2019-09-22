@@ -44,7 +44,7 @@ namespace XamarinApp.UI
         public void LoadUser()
         {
             ShowText = "Getting user details...";
-
+            IsBusy = true;
             if (!File.Exists(_fileName))
             {
                 MoreInformationNeeded?.Invoke();
@@ -57,17 +57,20 @@ namespace XamarinApp.UI
             var currentUser = JsonConvert.DeserializeObject<UserDto>(text);
 
             ShowText = "Signing in...";
-            IsBusy = false;
+
             UserService.Instance.SetCurrentUser(currentUser);
 
+            //await Task.Delay(10);
             CanContinueEvent?.Invoke();
+
+            //return Task.CompletedTask;
         }
 
-        public async Task AddMoreInformation(string friendlyName)
+        public async Task AddMoreInformation(string friendlyName, int maxSpace)
         {
             ShowText = "Creating new user...";
 
-            var user = await UserService.Instance.CreateUser(friendlyName);
+            var user = await UserService.Instance.CreateUser(friendlyName, maxSpace);
 
             if (user != null)
             {

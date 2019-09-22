@@ -16,12 +16,12 @@ namespace XamarinApp.UI
                 ShowText = "The application is loading..."
             };
 
+            BindingContext = _vm;
+
             _vm.CanContinueEvent += _vm_CanContinueEvent;
             _vm.MoreInformationNeeded += _vm_MoreInformationNeeded;
 
             InitializeComponent();
-
-            BindingContext = _vm;
 
 
             //BluetoothAdapter myDevice = BluetoothAdapter.DefaultAdapter;
@@ -40,6 +40,7 @@ namespace XamarinApp.UI
 
         private void _vm_CanContinueEvent()
         {
+            _vm.IsBusy = true;
             Navigation.PushAsync(new NetworkEntry());
         }
     }

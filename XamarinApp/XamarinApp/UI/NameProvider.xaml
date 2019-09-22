@@ -8,6 +8,8 @@
             HorizontalOptions="CenterAndExpand">
             <Label Text="Please enter your display name:"></Label>
             <Entry x:Name="displayName"/>
+            <Label Text="Max space you want to use in your phone (MB):"></Label>
+            <Entry x:Name="maxSpace" Keyboard="Numeric"/>
             <Button Text="Continue" Clicked="Button_OnClicked"></Button>
         </StackLayout>
     </ContentPage.Content>

@@ -16,15 +16,26 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Configuration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Events\EventClass.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Events\Events.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Exception\OperationFailedException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HelloWordPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)LongRunningTask.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Input\NetworkCreateDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Input\UserDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\AddUserToNetworkInput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\NetworkCreateInput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\VirtualFile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\NetworkService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\VirtualFileService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\UserService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\WebsocketService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\BaseViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UI\DetailedPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)UI\Exception\ExceptionPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -63,6 +74,11 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)UI\Exception\ExceptionPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)UI\DetailedPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </EmbeddedResource>
   </ItemGroup>
