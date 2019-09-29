@@ -10,8 +10,6 @@ namespace XamarinApp.UI
 {
     public class MainPageViewModel : BaseViewModel
     {
-        private bool _isBusy;
-        private string _showText;
         private string _fileName;
 
         public delegate void CanContinue();
@@ -19,19 +17,6 @@ namespace XamarinApp.UI
 
         public delegate void RequiresMoreInformation();
         public event RequiresMoreInformation MoreInformationNeeded;
-
-
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set { _isBusy = value; OnPropertyChanged();}
-        }
-
-        public string ShowText
-        {
-            get => _showText;
-            set { _showText = value; OnPropertyChanged();}
-        }
 
         public MainPageViewModel()
         {

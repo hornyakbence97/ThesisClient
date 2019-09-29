@@ -19,5 +19,6 @@ namespace XamarinApp
         public static string NotificationChannelDescription = "Virtual network description in config";
         public static string NotificationContentTitle = "Virtual network";
         public static string NotificationContentText = "The network is running in the background";
+        public static string GetFileListRelativeEndpoint = "Files/Fetch";
     }
 }

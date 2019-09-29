@@ -28,14 +28,17 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\AddUserToNetworkInput.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\NetworkCreateInput.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\VirtualFile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\VirtualFilePiece.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\NetworkService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\VirtualFileService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\UserService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\WebsocketService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\XamarinSpecific\FileOpener.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\BaseViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\DetailedPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)UI\DetailedPageViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Exception\ExceptionPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
