@@ -16,7 +16,6 @@ namespace XamarinApp.UI
 
         private string _userName;
         private bool _isLoginFormVisible;
-        private bool _isBusy;
         private string _networkId;
         private string _networkName;
         private string _networkPassword;
@@ -37,12 +36,6 @@ namespace XamarinApp.UI
         {
             get => _networkId;
             set { _networkId = value; OnPropertyChanged();}
-        }
-
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set { _isBusy = value; OnPropertyChanged();}
         }
 
         public bool IsLoginFormVisible

@@ -33,16 +33,43 @@ namespace XamarinApp.Droid
                 action: () => { WebsocketService.Instance.StartService(cancellationTokenSource.Token).Wait(); },
                 cancellationToken: cancellationTokenSource.Token);
 
+
             return StartCommandResult.Sticky;
+        }
+
+        public override void OnCreate()
+        {
+            CreateNotification();
+
+            base.OnCreate();
         }
 
         private void CreateNotification()
         {
-            var notification = new Notification.Builder(this)
-                .SetContentTitle("Hi")
-                .SetContentText("Szoveg")
-                .SetSmallIcon(Resource.Drawable.mr_button_connecting_light)
-                .Build();
+            if ((int) Build.VERSION.SdkInt >= 26)
+            {
+                var CHANNEL_ID = "thesis_channel_01";
+                NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID, 
+                    Configuration.NotificationChannelName,
+                    Android.App.NotificationImportance.Default);
+
+                ((NotificationManager) GetSystemService(Context.NotificationService))
+                    .CreateNotificationChannel(channel);
+
+                Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .SetContentTitle(Configuration.NotificationContentTitle)
+                    .SetContentText(Configuration.NotificationContentText)
+                    .Build();
+
+                StartForeground(SERVICE_RUNNING_NOTIFICATION_ID, notification);
+
+            }
+            //var notification = new Notification.Builder(this)
+                //.SetContentTitle("Hi")
+                //.SetContentText("Szoveg")
+                //.SetSmallIcon(Resource.Drawable.mr_button_connecting_light)
+                //.Build();
 
             //NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
             //    .SetSmallIcon(Resource.Drawable.ic_mr_button_connected_20_dark)
@@ -54,7 +81,7 @@ namespace XamarinApp.Droid
             //    .SetAutoCancel(true);
             //    //.SetContentIntent(pendingIntent);
 
-            StartForeground(SERVICE_RUNNING_NOTIFICATION_ID, notification);
+            //StartForeground(SERVICE_RUNNING_NOTIFICATION_ID, notification);
         }
 
         void CreateNotificationChannel()

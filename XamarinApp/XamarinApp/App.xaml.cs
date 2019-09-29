@@ -1,13 +1,19 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using Android;
+using Android.App.Admin;
+using Android.Content;
+using Android.Content.PM;
 using Android.Support.V4.Content;
 using Plugin.Permissions;
 using Plugin.Permissions.Abstractions;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
+using XamarinApp.Droid;
 using XamarinApp.UI;
 using XamarinApp.UI.Exception;
+using Permission = Plugin.Permissions.Abstractions.Permission;
 
 [assembly: XamlCompilation(XamlCompilationOptions.Compile)]
 namespace XamarinApp
@@ -23,6 +29,7 @@ namespace XamarinApp
                 InitializeComponent();
 
                 PermissionCheck().Wait();
+                PermissionCheck2();
 
                 IfDeveloper();
 
@@ -34,6 +41,16 @@ namespace XamarinApp
                 MainPage = new ExceptionPage();
             }
         }
+
+        private void PermissionCheck2()
+        {
+            var hasWriteContactsPermission = Android.App.Application.Context.CheckSelfPermission(Manifest.Permission.ReadExternalStorage);
+            if (hasWriteContactsPermission != Android.Content.PM.Permission.Granted)
+            {
+                //Android.App.Application.Context.ApplicationContext.
+            }
+        }
+
 
         private async Task<bool> PermissionCheck()
         {
@@ -69,7 +86,20 @@ namespace XamarinApp
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     Configuration.UserTextFileName);
 
-            if (File.Exists(fileName)) File.Delete(fileName);
+            //if (File.Exists(fileName)) File.Delete(fileName);
+
+            #region CreateTestFile
+
+            string filePath =
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "valami6.txt");
+
+            File.WriteAllText(filePath, DateTime.UtcNow.ToString("F") + "_Bence");
+
+            #endregion
+
+
 
             var directory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

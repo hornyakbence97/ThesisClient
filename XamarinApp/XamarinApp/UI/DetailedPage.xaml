@@ -3,10 +3,55 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="XamarinApp.UI.DetailedPage">
     <ContentPage.Content>
-        <StackLayout>
-            <Label Text="Welcome to Xamarin.Forms!"
-                VerticalOptions="CenterAndExpand" 
-                HorizontalOptions="CenterAndExpand" />
-        </StackLayout>
+        <AbsoluteLayout HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" IsVisible="True">
+            <Label
+                Text="There are no files in the network yet."
+                IsVisible="{Binding IsAnyFile}"
+                IsEnabled="{Binding IsEmptyWarningEnabled}"
+                AbsoluteLayout.LayoutFlags="PositionProportional"
+                AbsoluteLayout.LayoutBounds="0.5,0.5,-1,-1"/>
+            <StackLayout AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" IsVisible="True">
+                <!-- FROM !-->
+                <ListView 
+                    ItemSelected="FileItemSelected"
+                    x:Name="_filesListView"
+                    HasUnevenRows="True"
+                    SeparatorColor="Red"
+                    SeparatorVisibility="Default"
+                    ItemsSource="{Binding Files}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <ViewCell>
+                                <StackLayout BackgroundColor="White" Padding="20">
+
+                                    <Label FontSize="Title" Text="{Binding FileName}"></Label>
+                                    <Label FontSize="Body" Text="{Binding MimeType}"></Label>
+                                    <Label FontSize="Body" Text="{Binding GetFileSize}"></Label>
+                                    <Label FontSize="Body" Text="{Binding GetUploadTime}"></Label>
+                                    <Label FontSize="Body" Text="{Binding GetUploadedBy}"></Label>
+
+                                    <!--<Label FontSize="Medium" Text="{Binding Datum, StringFormat='{0:yyyy-MM-dd HH:mm}'}"></Label>
+                                    <Label Text="{Binding TipusSzoveg}"></Label>
+
+                                    <StackLayout Orientation="Horizontal">
+                                        <Label Text="Összes fogyasztás: "></Label>
+                                        <Label Text="{Binding OsszesFogyasztas}"></Label>
+                                        <Label Text="{Binding MertekEgyseg}"></Label>
+                                    </StackLayout>-->
+
+                                </StackLayout>
+                            </ViewCell>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <!-- TO !-->
+            </StackLayout>
+            <StackLayout IsVisible="True" Padding="12"
+                         AbsoluteLayout.LayoutFlags="PositionProportional"
+                         AbsoluteLayout.LayoutBounds="0.5,0.5,-1,-1">
+                <ActivityIndicator IsRunning="{Binding IsBusy}" Color ="Red"/>
+                <Label Text="{Binding ShowText}" IsVisible="{Binding IsBusy}"></Label>
+            </StackLayout>
+        </AbsoluteLayout>
     </ContentPage.Content>
 </ContentPage>
