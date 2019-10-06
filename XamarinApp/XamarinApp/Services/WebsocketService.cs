@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using XamarinApp.WebSocket;
 
 namespace XamarinApp.Services
 {
@@ -10,6 +11,7 @@ namespace XamarinApp.Services
         private static readonly object padlock = new object();
 
         private HttpClient _client;
+        private WebSocketProcesser _webSocketProcesser = new WebSocketProcesser();
 
         WebsocketService()
         {
@@ -32,12 +34,7 @@ namespace XamarinApp.Services
 
         public async Task StartService(CancellationToken cancellationToken)
         {
-            while (true)
-            {
-                await VirtualFileService.Instance.SendFilesToServer();
-
-                await Task.Delay(3000);
-            }
+            await _webSocketProcesser.StartTask();
         }
     }
 }

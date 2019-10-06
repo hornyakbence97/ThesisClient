@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using Android.Provider;
 using Android.Support.V4.Content;
 using Android.Widget;
 using Java.IO;
+using Plugin.FilePicker;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 using XamarinApp.Models;
@@ -44,20 +46,14 @@ namespace XamarinApp.UI
             switch (selected)
             {
                 case "Open":
-                    isRefreshNeeded = true;
+                    //isRefreshNeeded = true;
                     Toast.MakeText(Android.App.Application.Context, $"Opening {file.FileName}...", ToastLength.Short).Show();
-                    var filePath = await _vm.OpenFile(file);
 
-                    //await Launcher.OpenAsync(new OpenFileRequest
-                    //{
-                    //    File = new ReadOnlyFile(file)
-                    //});
+                    MessagingCenter.Subscribe<string>(this, Events.Events.FileReceived, FileReceived);
 
-                    //FileOpener.OpenFile(filePath, file.MimeType);
-                    //FileOpener.OpenPDF2(filePath, file.MimeType);
-                    //var f = new Uri("content://" + filePath);
-                    //Device.OpenUri(f);
-                    FileOpener.Open();
+                    _vm.File = file;
+
+                    await _vm.OpenFile(file);
                     break;
                 case "Delete":
                     var confirm = await DisplayAlert("Delete pressed", $"{file.FileName} will be deleted. Are you sure?", "Yes, delete", "Cancel");
@@ -75,6 +71,36 @@ namespace XamarinApp.UI
             {
                 await _vm.FetchFiles();
             }
+        }
+
+        private void FileReceived(string fileId)
+        {
+            if (fileId == _vm?.File?.FileId.ToString())
+            {
+                MessagingCenter.Unsubscribe<string>(this, Events.Events.FileReceived);
+
+                if (!FileOpener.Open(_vm.File.FileName, _vm.File.MimeType, Configuration.OpenableTempFolderName))
+                {
+                    DisplayAlert(
+                        "No application",
+                        $"You don not have an application that can open the following file type:  '{_vm.File.MimeType}'. Download a program that can handle this file type, then try again.",
+                        "Ok");
+                }
+            }
+
+            _vm.FetchFiles();
+        }
+
+        private async void UploadNewItem(object sender, EventArgs e)
+        {
+            await UploadNewItemTaskAsync();
+        }
+
+        private async Task UploadNewItemTaskAsync()
+        {
+            var file = await CrossFilePicker.Current.PickFile();
+
+            await DisplayAlert("hh", file.FileName, "Ok");
         }
     }
 }

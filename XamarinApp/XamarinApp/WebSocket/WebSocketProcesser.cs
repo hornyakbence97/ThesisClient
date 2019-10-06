@@ -4,7 +4,12 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Xamarin.Forms;
+using XamarinApp.Services;
+using XamarinApp.WebSocket.Model;
+using XamarinApp.WebSocket.Model.Dto.Input;
+using XamarinApp.WebSocket.Model.Dto.Output;
 
 namespace XamarinApp.WebSocket
 {
@@ -16,25 +21,124 @@ namespace XamarinApp.WebSocket
         {
             _clientWebSocket = new ClientWebSocket();
             _clientWebSocket.Options.KeepAliveInterval = Configuration.KeepAliveInterval;
+            _clientWebSocket.Options.SetBuffer(Configuration.ReceiveBufferSize, Configuration.ReceiveBufferSize);
         }
 
         public async Task StartTask()
         {
+            await ConnectAndAuthenticate();
+
+            await GoIdle();
+        }
+
+        private async Task ConnectAndAuthenticate()
+        {
+            var user = UserService.Instance.GetCurrentUser();
+
+            var authenticationDo = new AuthenticationDto
+            {
+                Token1 = user.Token1,
+                FriendlyName = user.FriendlyName,
+                RequestType = WebSocketRequestType.AUTHENTICATION,
+                Token2 = user.Token2
+            };
+
             await _clientWebSocket.ConnectAsync(Configuration.BaseUrlWebSocket, CancellationToken.None);
 
-            await WriteStringToWebSocket("{\"Token1\": \"9c25a537-a309-4edd-8186-8ad6c2d4c907\", \"Token2\": \"3fd4cdf0-0d34-4ff4-9509-4136ed48b9f3\", \"RequestType\": 1, \"ReceiveId\": \"3fd4cdf0-0d34-4ff4-9509-4136ed48b9f4\"}", _clientWebSocket);
-            await WriteStringToWebSocket("{\"Token1\": \"9c25a537-a309-4edd-8186-8ad6c2d4c907\", \"Token2\": \"3fd4cdf0-0d34-4ff4-9509-4136ed48b9f3\", \"RequestType\": 2, \"ReceiveId\": \"3fd4cdf0-0d34-4ff4-9509-4136ed48b9f4\"}", _clientWebSocket);
+            await WriteStringToWebSocket(JsonConvert.SerializeObject(authenticationDo), _clientWebSocket);
+        }
 
-
+        private async Task GoIdle()
+        {
             while (true)
             {
-                var text = await ReadStringContentFromWebSocket(_clientWebSocket);
+                var readResult = await ReadContentFromWebSocket(_clientWebSocket);
+
+                switch (readResult.MessageType)
+                {
+                    case WebSocketMessageType.Text:
+                        await ProcessIncomingRequest(readResult.Text);
+                        break;
+                    case WebSocketMessageType.Binary:
+                        break;
+                    case WebSocketMessageType.Close:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+
+        private async Task ProcessIncomingRequest(string jsonText)
+        {
+            var baseDto = JsonConvert.DeserializeObject<IncomingBaseDto>(jsonText);
+
+            switch (baseDto.RequestType)
+            {
+                case IncomingRequestType.SEND_FILE:
+                    await ProcessSendFileRequest(jsonText);
+                    break;
+                case IncomingRequestType.DELETE_FILE:
+                    await ProcessDeleteFileRequest(jsonText);
+                    break;
+                case IncomingRequestType.SAVE_FILE:
+                    await ProcessSaveFileRequest(jsonText);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private async Task ProcessSendFileRequest(string jsonText)
+        {
+            var dto = JsonConvert.DeserializeObject<SendFileDto>(jsonText);
+
+            foreach (var id in dto.FilePieceIds)
+            {
+                await VirtualFileService.Instance.SendFilePieceToServerAsync(id);
+            }
+        }
+
+        private async Task ProcessDeleteFileRequest(string jsonText)
+        {
+            var dto = JsonConvert.DeserializeObject<DeleteFileDto>(jsonText);
+
+            foreach (var filePeaceId in dto.FilePiecesToDelete)
+            {
+                await VirtualFileService.Instance.DeleteFilePiece(filePeaceId);
+
+                await SendConfirm(filePeaceId, dto.RequestType);
+            }
+        }
+
+        private async Task ProcessSaveFileRequest(string jsonText)
+        {
+            var dto = JsonConvert.DeserializeObject<SaveFileDto>(jsonText);
+
+            foreach (var filePeace in dto.FilePeaces)
+            {
+                await VirtualFileService.Instance.SaveFilePieceAsync(filePeace.Id, filePeace.Bytes);
+
+                await SendConfirm(filePeace.Id, dto.RequestType);
 
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    MessagingCenter.Send<string>(_clientWebSocket.State.ToString() + text, Events.Events.WebSocketReceive);
+                    MessagingCenter.Send<string>(filePeace.Id.ToString(), Events.Events.WebSocketReceive);
                 });
             }
+        }
+
+        private async Task SendConfirm(Guid filePeaceId, IncomingRequestType webSocketRequestType)
+        {
+            var dto = new ReceivedConfirmationDto
+            {
+                Token1 = UserService.Instance.GetCurrentUser().Token1,
+                RequestType = WebSocketRequestType.RECEIVED_COMFIRMATION,
+                ReceiveId = filePeaceId,
+                Type = webSocketRequestType
+            };
+
+            await WriteStringToWebSocket(JsonConvert.SerializeObject(dto), _clientWebSocket);
         }
 
         private async Task WriteStringToWebSocket(string text, ClientWebSocket webSocket)
@@ -44,14 +148,14 @@ namespace XamarinApp.WebSocket
             await WriteAsBinaryToWebSocket(bytes, webSocket, WebSocketMessageType.Text);
         }
 
-        private static async Task WriteAsBinaryToWebSocket(byte[] bytes, ClientWebSocket webSocket, WebSocketMessageType type = WebSocketMessageType.Text)
+        private static async Task WriteAsBinaryToWebSocket(byte[] bytes, ClientWebSocket webSocket, WebSocketMessageType type)
         {
             if (bytes.Length <= Configuration.ReceiveBufferSize)
             {
                 await webSocket
                     .SendAsync(
                         new ArraySegment<byte>(bytes, 0, bytes.Length),
-                        WebSocketMessageType.Text,
+                        type,
                         true,
                         CancellationToken.None);
 
@@ -89,7 +193,20 @@ namespace XamarinApp.WebSocket
             }
         }
 
-        private static async Task<string> ReadStringContentFromWebSocket(ClientWebSocket webSocket)
+        private static async Task<(WebSocketMessageType MessageType, byte[] Bytes, string Text)> ReadContentFromWebSocket(ClientWebSocket webSocket)
+        {
+            var readResult = await ReadBinaryContentFromWebSocket(webSocket);
+
+            (WebSocketMessageType MessageType, byte[] Bytes, string Text) ret;
+
+            ret = readResult.MessageType == WebSocketMessageType.Text
+                ? (readResult.MessageType, readResult.Bytes, Encoding.UTF8.GetString(readResult.Bytes))
+                : (readResult.MessageType, readResult.Bytes, string.Empty);
+
+            return ret;
+        }
+
+        private static async Task<(byte[] Bytes, WebSocketMessageType MessageType)> ReadBinaryContentFromWebSocket(ClientWebSocket webSocket)
         {
             var bufferArray = new byte[Configuration.ReceiveBufferSize];
 
@@ -110,11 +227,7 @@ namespace XamarinApp.WebSocket
                 mainBuffer = AppendArrays(mainBuffer, temporaryBuffer);
             }
 
-            var ret =  Encoding.UTF8.GetString(mainBuffer);
-
-            Console.WriteLine(ret);
-
-            return ret;
+            return (mainBuffer, inputResult.MessageType);
         }
 
         private static byte[] AppendArrays(byte[] appendThis, byte[] appendWithThis)
