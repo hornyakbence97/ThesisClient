@@ -26,6 +26,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Input\NetworkCreateDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Input\UserDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\AddUserToNetworkInput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\DeleteFileDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\NetworkCreateInput.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\VirtualFile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\VirtualFilePiece.cs" />
@@ -53,6 +54,15 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)UI\NetworkEntryViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Input\DeleteFileDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Input\IncomingBaseDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Input\IncomingRequestType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Input\SaveFileDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Input\SendFileDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Output\AuthenticationDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Output\ReceivedConfirmationDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\WebSocketRequestType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\BaseDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WebSocket\WebSocketProcesser.cs" />
   </ItemGroup>
   <ItemGroup>

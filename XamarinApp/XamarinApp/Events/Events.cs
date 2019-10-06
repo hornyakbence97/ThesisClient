@@ -10,5 +10,6 @@
 
         public static string StartService = "StartService";
         public static string StopService = "StopService";
+        public static string FileReceived = "FileReceived";
     }
 }

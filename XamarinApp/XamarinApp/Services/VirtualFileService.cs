@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -8,9 +10,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Android.Support.V4.Content;
 using Newtonsoft.Json;
+using Xamarin.Forms;
 using XamarinApp.Exception;
 using XamarinApp.Models;
 using XamarinApp.Models.Dto.Input;
+using XamarinApp.Models.Dto.Output;
 
 namespace XamarinApp.Services
 {
@@ -20,6 +24,9 @@ namespace XamarinApp.Services
         private static readonly object padlock = new object();
 
         private HttpClient _client;
+        private ConcurrentDictionary<string, string> _needToReceiveTheseFilePeaces = new ConcurrentDictionary<string, string>();
+        private bool _isLastFilePeace = false;
+        private List<(Guid Id, int OrderId)> _filePeacesToOpen;
 
         VirtualFileService()
         {
@@ -27,6 +34,8 @@ namespace XamarinApp.Services
             {
                 BaseAddress = Configuration.BaseUrl
             };
+
+            MessagingCenter.Subscribe<string>(this, Events.Events.WebSocketReceive, FilePeaceArrived);
         }
 
         public static VirtualFileService Instance
@@ -105,21 +114,194 @@ namespace XamarinApp.Services
 
         public async Task DeleteFile(Guid fileFileId)
         {
-            await Task.Delay(3500); //TODO implement
+            var user = UserService.Instance.GetCurrentUser();
+
+            var dto = new DeleteFileDto
+            {
+                FileId = fileFileId,
+                UserToken1Id = user.Token1
+            };
+
+            var response = await _client.PostAsync(
+                Configuration.DeleteFileRelativeEndpoint,
+                new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json"),
+                CancellationToken.None);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new OperationFailedException("Failed to delete file, API call unsuccessful: " + errorMessage);
+            }
+
+            //var returnJson = await response.Content.ReadAsStringAsync();
         }
 
-        public async Task<string> OpenFile(Guid fileFileId)
+        public async Task OpenFile(VirtualFile file)
         {
-            await Task.Delay(5000); //TODO implement
+            //TODO implement
 
-            string filePath =
-                Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "valami2.txt");
+            //string filePath =
+            //    Path.Combine(
+            //        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            //        "valami2.txt");
 
-            filePath = Path.Combine(Android.OS.Environment.RootDirectory.AbsolutePath, "valami3.txt");
+            //filePath = Path.Combine(Android.OS.Environment.RootDirectory.AbsolutePath, "valami3.txt");
 
-            return filePath;
+            var directory = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            //write all data to this file:
+            var filePath = Path.Combine(directory, file.FileName);
+
+            var filePiecesThatNeedToForThisFileToOpen = await SendFileOpeningRequestAsync(filePath, file.FileId);
+            _filePeacesToOpen = filePiecesThatNeedToForThisFileToOpen.AllIds; //all the peaces
+
+            _isLastFilePeace = false;
+            foreach (var filePeace in filePiecesThatNeedToForThisFileToOpen.MissingIds) //missing peaces
+            {
+                _needToReceiveTheseFilePeaces.TryAdd(filePeace.Id.ToString(), file.FileId.ToString());
+            }
+            _isLastFilePeace = true;
+        }
+
+        private void FilePeaceArrived(string id)
+        {
+            _needToReceiveTheseFilePeaces.TryRemove(id, out string removedId);
+
+            if (!_needToReceiveTheseFilePeaces.Any() && _isLastFilePeace)
+            {
+                PrepareFilePeacesToOpen(removedId); //union all file peace
+
+                MessagingCenter.Send<string>(removedId, Events.Events.FileReceived);
+            }
+        }
+
+        private void PrepareFilePeacesToOpen(string fileId)
+        {
+            var filePeacesFolder = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
+            var outputFolder = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
+
+            var outputFilePath = Path.Combine(outputFolder, fileId);
+
+            using (var outputFileStream = new FileStream(outputFilePath, FileMode.Append))
+            {
+                var orderedList = _filePeacesToOpen.OrderBy(x => x.OrderId);
+                foreach (var filePeace in orderedList)
+                {
+                    var tempFilePath = Path.Combine(filePeacesFolder, filePeace.Id.ToString());
+
+                    var tempBytes = File.ReadAllBytes(tempFilePath);
+
+                    outputFileStream.Write(tempBytes, 0, tempBytes.Length);
+                }
+            }
+        }
+
+
+        private async Task<(List<(Guid Id, int OrderId)> MissingIds, List<(Guid Id, int OrderId)> AllIds)> SendFileOpeningRequestAsync(string filePath, Guid fileId)
+        {
+            var user = UserService.Instance.GetCurrentUser();
+
+            var response = await _client.PostAsync(
+                Configuration.OpenFileRequestRelativeEndpoint + "/" + fileId,
+                new StringContent(JsonConvert.SerializeObject(user.Token1), Encoding.UTF8, "application/json"),
+                CancellationToken.None);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new OperationFailedException("Failed to send open file request, API call unsuccessful: " + errorMessage);
+            }
+
+            var returnJson = await response.Content.ReadAsStringAsync();
+
+           // (MissingIds: responsePrep, AllIds: relatedFilePeaces)
+            return JsonConvert.DeserializeObject<(List<(Guid Id, int OrderId)> MissingIds, List<(Guid Id, int OrderId)> AllIds)>(returnJson);
+        }
+
+        public async Task<byte[]> GetBytesById(Guid filePieceId)
+        {
+            return await Task.Run(() =>
+            {
+                var directory = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
+
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                var filePath = Path.Combine(directory, filePieceId.ToString());
+
+                if (!File.Exists(filePath))
+                {
+                    throw new OperationFailedException("The given file piece does not exists in this phone");
+                }
+
+                return File.ReadAllBytes(filePath);
+            });
+        }
+
+        public async Task SendFilePieceToServerAsync(Guid id)
+        {
+            var fileBytes = await GetBytesById(id);
+
+            var content = new MultipartFormDataContent();
+            var byteArrayContent = new ByteArrayContent(fileBytes, 0, fileBytes.Length);
+            content.Add(byteArrayContent, "filePieces", id.ToString());
+
+            var response = _client.PostAsync(
+                Configuration.SendFilePieceRelativeEndpoint + "/" + id,
+                content,
+                CancellationToken.None).Result;
+
+
+            var respText = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                //var errorMessage = await response.Content.ReadAsStringAsync();
+                //throw new OperationFailedException($"Failed to send file piece ({id}), API call unsuccessful: " + errorMessage);
+            }
+        }
+
+        public async Task SaveFilePieceAsync(Guid fileId, byte[] fileBytes)
+        {
+            await Task.Run(() =>
+            {
+                var directory = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
+
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                var filePath = Path.Combine(directory, fileId.ToString());
+
+                File.WriteAllBytes(filePath, fileBytes);
+            });
+        }
+
+        public async Task DeleteFilePiece(Guid fileId)
+        {
+            await Task.Run(() =>
+            {
+                var directory = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
+
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                var filePath = Path.Combine(directory, fileId.ToString());
+
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            });
         }
     }
 }

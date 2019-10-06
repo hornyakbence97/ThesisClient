@@ -50,6 +50,12 @@ namespace XamarinApp.UI
             private set { _userName = value; OnPropertyChanged();}
         }
 
+        public NetworkEntryViewModel()
+        {
+            _networkName = "Halozat" + DateTime.UtcNow.ToFileTimeUtc();
+            _networkPassword = "123";
+        }
+
         public void LoadCurrentUser()
         {
             IsBusy = true;

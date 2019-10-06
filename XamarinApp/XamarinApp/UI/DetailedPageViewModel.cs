@@ -13,6 +13,7 @@ namespace XamarinApp.UI
         private ObservableCollection<VirtualFile> _files;
         private bool _isNoAnyFile;
         private bool _isEmptyWarningEnabled;
+        private VirtualFile _file;
 
         public bool IsEmptyWarningEnabled
         {
@@ -24,6 +25,12 @@ namespace XamarinApp.UI
         {
             get => _isNoAnyFile;
             set { _isNoAnyFile = value; OnPropertyChanged();}
+        }
+
+        public VirtualFile File
+        {
+            get => _file;
+            set { _file = value; OnPropertyChanged();}
         }
 
         public ObservableCollection<VirtualFile> Files
@@ -43,9 +50,10 @@ namespace XamarinApp.UI
         public async Task FetchFiles()
         {
             IsBusy = true;
+            IsEmptyWarningEnabled = true;
 
             Files = new ObservableCollection<VirtualFile>(await VirtualFileService.Instance.FetchFileListFromServer());
-
+            //todo remove this
             Files = new ObservableCollection<VirtualFile>
             {
                 new VirtualFile
@@ -54,7 +62,8 @@ namespace XamarinApp.UI
                     FileSize = 5000,
                     UploadedBy = "Bence",
                     Created = DateTime.UtcNow,
-                    MimeType = "application/json"
+                    MimeType = "application/json",
+                    FileId = Guid.NewGuid()
                 },
                 new VirtualFile
                 {
@@ -62,7 +71,8 @@ namespace XamarinApp.UI
                     FileSize = 1024000,
                     UploadedBy = "Sanyi",
                     Created = DateTime.UtcNow,
-                    MimeType = "application/json"
+                    MimeType = "text/plain",
+                    FileId = Guid.NewGuid()
                 },
                 new VirtualFile
                 {
@@ -70,7 +80,8 @@ namespace XamarinApp.UI
                     FileSize = 1024000,
                     UploadedBy = "Sanyi",
                     Created = DateTime.UtcNow,
-                    MimeType = "application/json"
+                    MimeType = "application/json",
+                    FileId = Guid.NewGuid()
                 },
                 new VirtualFile
                 {
@@ -78,7 +89,8 @@ namespace XamarinApp.UI
                     FileSize = 1024000,
                     UploadedBy = "Sanyi",
                     Created = DateTime.UtcNow,
-                    MimeType = "application/json"
+                    MimeType = "application/json",
+                    FileId = Guid.NewGuid()
                 },
                 new VirtualFile
                 {
@@ -86,7 +98,8 @@ namespace XamarinApp.UI
                     FileSize = 1024000,
                     UploadedBy = "Sanyi",
                     Created = DateTime.UtcNow,
-                    MimeType = "application/json"
+                    MimeType = "application/json",
+                    FileId = Guid.NewGuid()
                 }
             };
 
@@ -114,7 +127,7 @@ namespace XamarinApp.UI
             IsEmptyWarningEnabled = true;
         }
 
-        public async Task<string> OpenFile(VirtualFile file)
+        public async Task OpenFile(VirtualFile file)
         {
             IsBusy = true;
 
@@ -124,12 +137,10 @@ namespace XamarinApp.UI
 
             ShowText = "Downloading missing file pieces, please wait...";
 
-            var filePath = await VirtualFileService.Instance.OpenFile(file.FileId);
+            await VirtualFileService.Instance.OpenFile(file);
 
-            IsBusy = false;
-            IsEmptyWarningEnabled = true;
-
-            return filePath;
+            //IsBusy = false;
+            //IsEmptyWarningEnabled = true;
         }
     }
 }

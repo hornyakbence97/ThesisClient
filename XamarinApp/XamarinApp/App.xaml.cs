@@ -1,5 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 using Android;
 using Android.App.Admin;
@@ -81,6 +84,32 @@ namespace XamarinApp
 
         private void IfDeveloper()
         {
+
+            #region TestFileSend
+            HttpClient _client = new HttpClient
+            {
+                BaseAddress = Configuration.BaseUrl
+            };
+
+
+            byte[] fileBytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            var content = new MultipartFormDataContent();
+            var byteArrayContent = new ByteArrayContent(fileBytes, 0, fileBytes.Length);
+            content.Add(byteArrayContent, "filePieces", "file");
+
+
+
+           var response = _client.PostAsync(
+                Configuration.SendFilePieceRelativeEndpoint + "/" + Guid.NewGuid(),
+                content,
+                CancellationToken.None).Result;
+
+
+            var respText = response.Content.ReadAsStringAsync().Result;
+
+            #endregion
+
+
             string fileName =
                 Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
