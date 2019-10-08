@@ -51,9 +51,7 @@ namespace XamarinApp.Services
 
         public async Task<IEnumerable<VirtualFilePiece>> GetAllVirtualFilesInPhone()
         {
-            var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                Configuration.DefaultFileFolder);
+            var directory = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
 
             if (!Directory.Exists(directory))
             {
@@ -166,13 +164,16 @@ namespace XamarinApp.Services
                 _needToReceiveTheseFilePeaces.TryAdd(filePeace.Id.ToString(), file.FileId.ToString());
             }
             _isLastFilePeace = true;
+
+            _needToReceiveTheseFilePeaces.TryAdd(string.Empty, file.FileId.ToString());
+            MessagingCenter.Send<string>(string.Empty, Events.Events.WebSocketReceive);
         }
 
         private void FilePeaceArrived(string id)
         {
             _needToReceiveTheseFilePeaces.TryRemove(id, out string removedId);
 
-            if (!_needToReceiveTheseFilePeaces.Any() && _isLastFilePeace)
+            if (!_needToReceiveTheseFilePeaces.Any() && _isLastFilePeace && !string.IsNullOrWhiteSpace(removedId))
             {
                 PrepareFilePeacesToOpen(removedId); //union all file peace
 
@@ -182,27 +183,37 @@ namespace XamarinApp.Services
 
         private void PrepareFilePeacesToOpen(string fileId)
         {
-            var filePeacesFolder = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
-            var outputFolder = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
-
-            var outputFilePath = Path.Combine(outputFolder, fileId);
-
-            using (var outputFileStream = new FileStream(outputFilePath, FileMode.Append))
+            if (!string.IsNullOrWhiteSpace(fileId))
             {
-                var orderedList = _filePeacesToOpen.OrderBy(x => x.OrderId);
-                foreach (var filePeace in orderedList)
+                var filePeacesFolder = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
+                var outputFolder = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
+
+                var outputFilePath = Path.Combine(outputFolder, fileId);
+
+                //todo consider this:
+                if (File.Exists(outputFilePath))
                 {
-                    var tempFilePath = Path.Combine(filePeacesFolder, filePeace.Id.ToString());
+                    File.Delete(outputFilePath);
+                }
 
-                    var tempBytes = File.ReadAllBytes(tempFilePath);
+                using (var outputFileStream = new FileStream(outputFilePath, FileMode.Append))
+                {
+                    var orderedList = _filePeacesToOpen.OrderBy(x => x.OrderId);
+                    foreach (var filePeace in orderedList)
+                    {
+                        var tempFilePath = Path.Combine(filePeacesFolder, filePeace.Id.ToString());
 
-                    outputFileStream.Write(tempBytes, 0, tempBytes.Length);
+                        var tempBytes = File.ReadAllBytes(tempFilePath);
+
+                        outputFileStream.Write(tempBytes, 0, tempBytes.Length);
+                    }
                 }
             }
         }
 
 
-        private async Task<(List<(Guid Id, int OrderId)> MissingIds, List<(Guid Id, int OrderId)> AllIds)> SendFileOpeningRequestAsync(string filePath, Guid fileId)
+        private async Task<(List<(Guid Id, int OrderId)> MissingIds, List<(Guid Id, int OrderId)> AllIds)> 
+            SendFileOpeningRequestAsync(string filePath, Guid fileId)
         {
             var user = UserService.Instance.GetCurrentUser();
 
@@ -253,10 +264,10 @@ namespace XamarinApp.Services
             var byteArrayContent = new ByteArrayContent(fileBytes, 0, fileBytes.Length);
             content.Add(byteArrayContent, "filePieces", id.ToString());
 
-            var response = _client.PostAsync(
+            var response = await _client.PostAsync(
                 Configuration.SendFilePieceRelativeEndpoint + "/" + id,
                 content,
-                CancellationToken.None).Result;
+                CancellationToken.None);
 
 
             var respText = await response.Content.ReadAsStringAsync();
@@ -302,6 +313,37 @@ namespace XamarinApp.Services
                     File.Delete(filePath);
                 }
             });
+        }
+
+        public async Task UploadNewFileToServerAsync(string fileName, byte[] fileBytes, string mimeType)
+        {
+            var dto = new UploadFileDto
+            {
+                FileName = fileName,
+                MimeType = mimeType,
+                UserToken1 = UserService.Instance.GetCurrentUser().Token1
+            };
+
+            var content = new MultipartFormDataContent();
+
+            var byteArrayContent = new ByteArrayContent(fileBytes, 0, fileBytes.Length);
+            content.Add(byteArrayContent, "fileByte", fileName);
+
+            var stringContent = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8);
+            content.Add(stringContent, "dto");
+
+            var response = await _client.PostAsync(
+                Configuration.UploadFileRelativeEndpoint,
+                content,
+                CancellationToken.None);
+
+
+            var respText = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                //var errorMessage = await response.Content.ReadAsStringAsync();
+                //throw new OperationFailedException($"Failed to send file piece ({id}), API call unsuccessful: " + errorMessage);
+            }
         }
     }
 }

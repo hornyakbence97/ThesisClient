@@ -28,6 +28,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\AddUserToNetworkInput.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\DeleteFileDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\NetworkCreateInput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\UploadFileDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\VirtualFile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\VirtualFilePiece.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\NetworkService.cs" />

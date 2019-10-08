@@ -50,58 +50,57 @@ namespace XamarinApp.UI
         public async Task FetchFiles()
         {
             IsBusy = true;
-            IsEmptyWarningEnabled = true;
 
             Files = new ObservableCollection<VirtualFile>(await VirtualFileService.Instance.FetchFileListFromServer());
             //todo remove this
-            Files = new ObservableCollection<VirtualFile>
-            {
-                new VirtualFile
-                {
-                    FileName = "Fájl 1",
-                    FileSize = 5000,
-                    UploadedBy = "Bence",
-                    Created = DateTime.UtcNow,
-                    MimeType = "application/json",
-                    FileId = Guid.NewGuid()
-                },
-                new VirtualFile
-                {
-                    FileName = "Fájl 2",
-                    FileSize = 1024000,
-                    UploadedBy = "Sanyi",
-                    Created = DateTime.UtcNow,
-                    MimeType = "text/plain",
-                    FileId = Guid.NewGuid()
-                },
-                new VirtualFile
-                {
-                    FileName = "Fájl 2",
-                    FileSize = 1024000,
-                    UploadedBy = "Sanyi",
-                    Created = DateTime.UtcNow,
-                    MimeType = "application/json",
-                    FileId = Guid.NewGuid()
-                },
-                new VirtualFile
-                {
-                    FileName = "Fájl 2",
-                    FileSize = 1024000,
-                    UploadedBy = "Sanyi",
-                    Created = DateTime.UtcNow,
-                    MimeType = "application/json",
-                    FileId = Guid.NewGuid()
-                },
-                new VirtualFile
-                {
-                    FileName = "Fájl 2",
-                    FileSize = 1024000,
-                    UploadedBy = "Sanyi",
-                    Created = DateTime.UtcNow,
-                    MimeType = "application/json",
-                    FileId = Guid.NewGuid()
-                }
-            };
+            //Files = new ObservableCollection<VirtualFile>
+            //{
+            //    new VirtualFile
+            //    {
+            //        FileName = "Fájl 1",
+            //        FileSize = 5000,
+            //        UploadedBy = "Bence",
+            //        Created = DateTime.UtcNow,
+            //        MimeType = "application/json",
+            //        FileId = Guid.NewGuid()
+            //    },
+            //    new VirtualFile
+            //    {
+            //        FileName = "Fájl 2",
+            //        FileSize = 1024000,
+            //        UploadedBy = "Sanyi",
+            //        Created = DateTime.UtcNow,
+            //        MimeType = "text/plain",
+            //        FileId = Guid.NewGuid()
+            //    },
+            //    new VirtualFile
+            //    {
+            //        FileName = "Fájl 2",
+            //        FileSize = 1024000,
+            //        UploadedBy = "Sanyi",
+            //        Created = DateTime.UtcNow,
+            //        MimeType = "application/json",
+            //        FileId = Guid.NewGuid()
+            //    },
+            //    new VirtualFile
+            //    {
+            //        FileName = "Fájl 2",
+            //        FileSize = 1024000,
+            //        UploadedBy = "Sanyi",
+            //        Created = DateTime.UtcNow,
+            //        MimeType = "application/json",
+            //        FileId = Guid.NewGuid()
+            //    },
+            //    new VirtualFile
+            //    {
+            //        FileName = "Fájl 2",
+            //        FileSize = 1024000,
+            //        UploadedBy = "Sanyi",
+            //        Created = DateTime.UtcNow,
+            //        MimeType = "application/json",
+            //        FileId = Guid.NewGuid()
+            //    }
+            //};
 
             if (!Files.Any())
             {
@@ -109,17 +108,13 @@ namespace XamarinApp.UI
             }
 
             IsBusy = false;
+
+            IsEmptyWarningEnabled = true;
         }
 
         public async  Task DeleteFile(VirtualFile file)
         {
-            IsBusy = true;
-
-            //hide elements
-            Files = new ObservableCollection<VirtualFile>();
-            IsEmptyWarningEnabled = false;
-
-            ShowText = "Delete in progress...";
+            ShowLoading("Delete in progress, please wait...");
 
             await VirtualFileService.Instance.DeleteFile(file.FileId);
 
@@ -129,18 +124,32 @@ namespace XamarinApp.UI
 
         public async Task OpenFile(VirtualFile file)
         {
+            ShowLoading("Downloading missing file pieces, please wait...");
+
+            await VirtualFileService.Instance.OpenFile(file);
+        }
+
+        public async Task UploadFile(string fileName, byte[] fileDataArray, string mimeType)
+        {
+            ShowLoading("Uploading file, please wait...");
+            await Task.Delay(3000);
+
+            //todo implement
+            await VirtualFileService.Instance.UploadNewFileToServerAsync(fileName, fileDataArray, mimeType);
+
+            ShowText = "Updating files, please wait...";
+            await FetchFiles();
+        }
+
+        private void ShowLoading(string loadingText)
+        {
             IsBusy = true;
 
-            //hide elements
+            // hide elements
             Files = new ObservableCollection<VirtualFile>();
             IsEmptyWarningEnabled = false;
 
-            ShowText = "Downloading missing file pieces, please wait...";
-
-            await VirtualFileService.Instance.OpenFile(file);
-
-            //IsBusy = false;
-            //IsEmptyWarningEnabled = true;
+            ShowText = loadingText;
         }
     }
 }

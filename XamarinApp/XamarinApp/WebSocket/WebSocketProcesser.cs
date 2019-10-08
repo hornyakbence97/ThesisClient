@@ -26,9 +26,12 @@ namespace XamarinApp.WebSocket
 
         public async Task StartTask()
         {
-            await ConnectAndAuthenticate();
+            if (_clientWebSocket == null || _clientWebSocket.State != WebSocketState.Open)
+            {
+                await ConnectAndAuthenticate();
 
-            await GoIdle();
+                await GoIdle();
+            }
         }
 
         private async Task ConnectAndAuthenticate()
@@ -113,6 +116,7 @@ namespace XamarinApp.WebSocket
 
         private async Task ProcessSaveFileRequest(string jsonText)
         {
+            //todo figure out something else: sending file in DTO is not good
             var dto = JsonConvert.DeserializeObject<SaveFileDto>(jsonText);
 
             foreach (var filePeace in dto.FilePeaces)
@@ -121,10 +125,18 @@ namespace XamarinApp.WebSocket
 
                 await SendConfirm(filePeace.Id, dto.RequestType);
 
-                Device.BeginInvokeOnMainThread(() =>
+                try
                 {
-                    MessagingCenter.Send<string>(filePeace.Id.ToString(), Events.Events.WebSocketReceive);
-                });
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        MessagingCenter.Send<string>(filePeace.Id.ToString(), Events.Events.WebSocketReceive);
+                    });
+                }
+                catch (System.Exception e)
+                {
+                    Console.WriteLine(e);
+                    //throw;
+                }
             }
         }
 
