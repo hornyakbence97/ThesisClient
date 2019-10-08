@@ -8,9 +8,11 @@ using Java.IO;
 using Plugin.FilePicker;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
+using XamarinApp.Droid;
 using XamarinApp.Models;
 using XamarinApp.Services;
 using XamarinApp.Services.XamarinSpecific;
+using Console = System.Console;
 using VisualElement = Xamarin.Forms.PlatformConfiguration.iOSSpecific.VisualElement;
 
 namespace XamarinApp.UI
@@ -79,7 +81,7 @@ namespace XamarinApp.UI
             {
                 MessagingCenter.Unsubscribe<string>(this, Events.Events.FileReceived);
 
-                if (!FileOpener.Open(_vm.File.FileName, _vm.File.MimeType, Configuration.OpenableTempFolderName))
+                if (!FileOpener.Open(_vm.File.FileId.ToString(), _vm.File.MimeType, Configuration.OpenableTempFolderName))
                 {
                     DisplayAlert(
                         "No application",
@@ -91,16 +93,27 @@ namespace XamarinApp.UI
             _vm.FetchFiles();
         }
 
-        private async void UploadNewItem(object sender, EventArgs e)
+        private void UploadNewItem(object sender, EventArgs e)
         {
-            await UploadNewItemTaskAsync();
+            UploadNewItemTaskAsync();
         }
 
         private async Task UploadNewItemTaskAsync()
         {
-            var file = await CrossFilePicker.Current.PickFile();
+            try
+            {
+                var file = await CrossFilePicker.Current.PickFile();
 
-            await DisplayAlert("hh", file.FileName, "Ok");
+                var mimeType = MimeTypes.GetMimeType(file.FilePath);
+
+                await _vm.UploadFile(file.FileName, file.DataArray, mimeType);
+
+                //await DisplayAlert("hh", file.FileName, "Ok");
+            }
+            catch (System.Exception ex)
+            {
+                throw;
+            }
         }
     }
 }

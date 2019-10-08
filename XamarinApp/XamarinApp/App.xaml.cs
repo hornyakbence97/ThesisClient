@@ -34,7 +34,7 @@ namespace XamarinApp
                 PermissionCheck().Wait();
                 PermissionCheck2();
 
-                IfDeveloper();
+                //IfDeveloper();
 
                 MainPage = new NavigationPage(new MainPage());
             }
