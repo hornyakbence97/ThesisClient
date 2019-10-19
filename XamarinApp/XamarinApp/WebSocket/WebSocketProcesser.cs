@@ -134,25 +134,6 @@ namespace XamarinApp.WebSocket
             {
                 await VirtualFileService.Instance.SendFilePieceToServerAsync(id);
             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-       
         }
 
         private async Task ProcessDeleteFileRequest(string jsonText)
@@ -161,9 +142,9 @@ namespace XamarinApp.WebSocket
 
             foreach (var filePeaceId in dto.FilePiecesToDelete)
             {
-                await VirtualFileService.Instance.DeleteFilePiece(filePeaceId);
+                var size = await VirtualFileService.Instance.DeleteFilePiece(filePeaceId);
 
-                await SendConfirm(filePeaceId, dto.RequestType);
+                await SendConfirm(filePeaceId, dto.RequestType, size);
             }
         }
 
@@ -246,14 +227,15 @@ namespace XamarinApp.WebSocket
             }
         }
 
-        private async Task SendConfirm(Guid filePeaceId, IncomingRequestType webSocketRequestType)
+        private async Task SendConfirm(Guid filePeaceId, IncomingRequestType webSocketRequestType, long fileSize = 0)
         {
             var dto = new ReceivedConfirmationDto
             {
                 Token1 = UserService.Instance.GetCurrentUser().Token1,
                 RequestType = WebSocketRequestType.RECEIVED_COMFIRMATION,
                 ReceiveId = filePeaceId,
-                Type = webSocketRequestType
+                Type = webSocketRequestType,
+                FilePeaceSize = fileSize
             };
 
             await WriteStringToWebSocket(JsonConvert.SerializeObject(dto), _clientWebSocket);

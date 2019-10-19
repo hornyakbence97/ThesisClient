@@ -7,5 +7,7 @@ namespace XamarinApp.WebSocket.Model.Dto.Output
     {
         public Guid ReceiveId { get; set; }
         public IncomingRequestType Type { get; set; }
+        public long FilePeaceSize { get; set; }
     }
 }
+
