@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Android.Provider;
 using Android.Support.V4.Content;
@@ -13,6 +15,7 @@ using XamarinApp.Models;
 using XamarinApp.Services;
 using XamarinApp.Services.XamarinSpecific;
 using Console = System.Console;
+using File = System.IO.File;
 using VisualElement = Xamarin.Forms.PlatformConfiguration.iOSSpecific.VisualElement;
 
 namespace XamarinApp.UI
@@ -30,6 +33,13 @@ namespace XamarinApp.UI
 
 			InitializeComponent();
 
+            _vm.FetchFiles();
+
+            MessagingCenter.Subscribe<EventsClass>(this, Events.Events.Fetch, FetchRequest);
+        }
+
+        private void FetchRequest(EventsClass obj)
+        {
             _vm.FetchFiles();
         }
 
@@ -104,16 +114,128 @@ namespace XamarinApp.UI
             {
                 var file = await CrossFilePicker.Current.PickFile();
 
-                var mimeType = MimeTypes.GetMimeType(file.FilePath);
+                var sure = await DisplayAlert(
+                    "Confirm",
+                    $"Are you sure you want to upload \"{file.FileName}\" to the network?",
+                    "Upload",
+                    "Cancel");
 
-                await _vm.UploadFile(file.FileName, file.DataArray, mimeType);
+                if (sure)
+                {
+                    var mimeType = MimeTypes.GetMimeType(file.FilePath);
+
+                    await _vm.UploadFile(file.FileName, file.DataArray, mimeType);
+
+                    Toast.MakeText(Android.App.Application.Context, "Upload in progress. Please wait a few minutes",
+                        ToastLength.Short);
+                }
 
                 //await DisplayAlert("hh", file.FileName, "Ok");
             }
             catch (System.Exception ex)
             {
-                throw;
+                //throw;
             }
+        }
+
+        private async void Copy(object sender, EventArgs e)
+        {
+            //todo remove this
+
+            var openable = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
+            var filepaces = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
+
+            //var toRoot =
+            //    Path.Combine(Android.OS.Environment.ExternalStorageDirectory.AbsolutePath, "tmp");
+
+            //var toOpenable = Path.Combine(toRoot, "Openable");
+            //var toFilePeaces = Path.Combine(toRoot, "FilePeaces");
+
+            //if (!Directory.Exists(toOpenable))
+            //{
+            //    Directory.CreateDirectory(toOpenable);
+            //}
+
+            //if (!Directory.Exists(toFilePeaces))
+            //{
+            //    Directory.CreateDirectory(toFilePeaces);
+            //}
+
+            //foreach (var file in Directory.GetFiles(toOpenable))
+            //{
+            //    var tmpFile = Path.Combine(toOpenable, file);
+
+            //    File.Delete(tmpFile);
+            //}
+
+            //foreach (var file in Directory.GetFiles(toFilePeaces))
+            //{
+            //    var tmpFile = Path.Combine(toFilePeaces, file);
+
+            //    File.Delete(tmpFile);
+            //}
+
+            if (Directory.Exists(openable))
+            {
+                var client = new HttpClient
+                {
+                    BaseAddress = Configuration.BaseUrl
+                };
+
+                var content = new MultipartFormDataContent();
+
+                foreach (var file in Directory.GetFiles(openable))
+                {
+                    var info = Path.GetFileName(file);
+
+                    var tmpFile = Path.Combine(openable, file);
+                    var bb = File.ReadAllBytes(tmpFile);
+
+                    var fileBytes = bb;
+                    var byteArrayContent = new ByteArrayContent(fileBytes, 0, fileBytes.Length);
+                    content.Add(byteArrayContent, "filePieces", info);
+
+                }
+
+                var response = await client.PostAsync(
+                    "Files/UploadOpenable",
+                    content,
+                    CancellationToken.None);
+            }
+
+
+            if (Directory.Exists(filepaces))
+            {
+                var client = new HttpClient
+                {
+                    BaseAddress = Configuration.BaseUrl
+                };
+
+                var content = new MultipartFormDataContent();
+
+                foreach (var file in Directory.GetFiles(filepaces))
+                {
+                    var info = Path.GetFileName(file);
+
+                    var tmpFile = Path.Combine(openable, file);
+                    var bb = File.ReadAllBytes(tmpFile);
+
+                    var fileBytes = bb;
+                    var byteArrayContent = new ByteArrayContent(fileBytes, 0, fileBytes.Length);
+                    content.Add(byteArrayContent, "filePieces", info);
+
+                }
+
+                var response = await client.PostAsync(
+                    "Files/UploadPeaces",
+                    content,
+                    CancellationToken.None);
+            }
+        }
+
+        private void Refresh(object sender, EventArgs e)
+        {
+            _vm.FetchFiles();
         }
     }
 }

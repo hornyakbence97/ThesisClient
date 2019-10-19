@@ -22,12 +22,12 @@ namespace XamarinApp
         public static string NotificationContentTitle = "Virtual network";
         public static string NotificationContentText = "The network is running in the background";
         public static string GetFileListRelativeEndpoint = "Files/Fetch";
-        public static string RootFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        public static string RootFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
         public static string OpenableTempFolderName = "Openable";
         public static string FilePiecesFolderName = "FilePeaces";
         public static string SendFilePieceRelativeEndpoint = "Files/SendFilePiece";
         public static string OpenFileRequestRelativeEndpoint = "Files/OpenFile";
         public static string DeleteFileRelativeEndpoint = "Files/Delete";
         public static string UploadFileRelativeEndpoint = "Files/Upload";
-    }
+   }
 }
