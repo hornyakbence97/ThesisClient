@@ -331,24 +331,27 @@ namespace XamarinApp.Services
             });
         }
 
-        public async Task DeleteFilePiece(Guid fileId)
+        public async Task<long> DeleteFilePiece(Guid fileId)
         {
-            await Task.Run(() =>
+            var directory = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
+
+            if (!Directory.Exists(directory))
             {
-                var directory = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
+                Directory.CreateDirectory(directory);
+            }
 
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
+            var filePath = Path.Combine(directory, fileId.ToString());
 
-                var filePath = Path.Combine(directory, fileId.ToString());
+            if (File.Exists(filePath))
+            {
+                long fileSize = new System.IO.FileInfo(filePath).Length;
 
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                }
-            });
+                File.Delete(filePath);
+
+                return fileSize;
+            }
+
+            return 0;
         }
 
         public async Task UploadNewFileToServerAsync(string fileName, byte[] fileBytes, string mimeType)
