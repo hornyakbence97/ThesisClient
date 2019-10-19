@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -63,6 +64,7 @@ namespace XamarinApp.WebSocket
                         await ProcessIncomingRequest(readResult.Text);
                         break;
                     case WebSocketMessageType.Binary:
+                        await ProcessSaveFileRequest(readResult.Bytes);
                         break;
                     case WebSocketMessageType.Close:
                         break;
@@ -87,9 +89,41 @@ namespace XamarinApp.WebSocket
                 case IncomingRequestType.SAVE_FILE:
                     await ProcessSaveFileRequest(jsonText);
                     break;
+                case IncomingRequestType.EMPTY_OPENABLE_FOLDER:
+                    await ProcessEmptyOpenableFolderRequest();
+                    break;
+                case IncomingRequestType.REMOVE_FILE_PEACE:
+                    await RemoveFilePeaceRequest(jsonText);
+                    break;
+                case IncomingRequestType.FETCH_FILES:
+                    await SendFetchFilesRequest();
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        private async Task SendFetchFilesRequest()
+        {
+            try
+            {
+                MessagingCenter.Send<EventsClass>(EventsClass.Instance, Events.Events.Fetch);
+            }
+            catch (System.Exception e)
+            {
+            }
+        }
+
+        private async Task RemoveFilePeaceRequest(string jsonText)
+        {
+            var dto = JsonConvert.DeserializeObject<DeleteFilePeaceDto>(jsonText);
+
+            await VirtualFileService.Instance.DeleteFilePiece(dto.FilePeaceId);
+        }
+
+        private async Task ProcessEmptyOpenableFolderRequest()
+        {
+            await VirtualFileService.Instance.EmptyOpenableFolder();
         }
 
         private async Task ProcessSendFileRequest(string jsonText)
@@ -100,6 +134,25 @@ namespace XamarinApp.WebSocket
             {
                 await VirtualFileService.Instance.SendFilePieceToServerAsync(id);
             }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
         }
 
         private async Task ProcessDeleteFileRequest(string jsonText)
@@ -140,6 +193,59 @@ namespace XamarinApp.WebSocket
             }
         }
 
+        private async Task ProcessSaveFileRequest(byte[] bytesIncoming)
+        {
+            byte[] guidBytes = new byte[16];
+            byte[] dataBytes = new byte[bytesIncoming.Length - guidBytes.Length];
+
+            for (int i = 0; i < guidBytes.Length; i++)
+            {
+                guidBytes[i] = bytesIncoming[i];
+            }
+
+            int j = 0;
+            for (int i = guidBytes.Length; i < bytesIncoming.Length; i++)
+            {
+                dataBytes[j] = bytesIncoming[i];
+                j++;
+            }
+
+            var filePeaceId = new Guid(guidBytes);
+
+            //#region Debug
+
+            //var szoveg = string.Join(',', dataBytes);
+
+            //var client = new HttpClient
+            //{
+            //    BaseAddress = Configuration.BaseUrl
+            //};
+
+            //var response = await client.PostAsync(
+            //    "Files/DebugTxt",
+            //    new StringContent(JsonConvert.SerializeObject(new {Id = filePeaceId.ToString(), Text = szoveg}), Encoding.UTF8, "application/json"),
+            //    CancellationToken.None);
+
+            //#endregion
+
+            await VirtualFileService.Instance.SaveFilePieceAsync(filePeaceId, dataBytes);
+
+            await SendConfirm(filePeaceId, IncomingRequestType.SAVE_FILE);
+
+            try
+            {
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    MessagingCenter.Send<string>(filePeaceId.ToString(), Events.Events.WebSocketReceive);
+                });
+            }
+            catch (System.Exception e)
+            {
+                Console.WriteLine(e);
+                //throw;
+            }
+        }
+
         private async Task SendConfirm(Guid filePeaceId, IncomingRequestType webSocketRequestType)
         {
             var dto = new ReceivedConfirmationDto
@@ -162,48 +268,13 @@ namespace XamarinApp.WebSocket
 
         private static async Task WriteAsBinaryToWebSocket(byte[] bytes, ClientWebSocket webSocket, WebSocketMessageType type)
         {
-            if (bytes.Length <= Configuration.ReceiveBufferSize)
-            {
-                await webSocket
+            await webSocket
                     .SendAsync(
                         new ArraySegment<byte>(bytes, 0, bytes.Length),
                         type,
                         true,
                         CancellationToken.None);
-
-                return;
             }
-
-            var start = 0;
-            var end = Configuration.ReceiveBufferSize;
-            var bufferSize = Configuration.ReceiveBufferSize;
-            var canContinue = true;
-
-            while (canContinue)
-            {
-                var isEndOfMessage = false;
-
-                if (end >= bytes.Length)
-                {
-                    var dif = end - bytes.Length;
-                    bufferSize -= dif;
-
-                    canContinue = false;
-
-                    isEndOfMessage = true;
-                }
-
-                await webSocket.SendAsync(
-                    new ArraySegment<byte>(bytes, start, bufferSize),
-                    type,
-                    isEndOfMessage,
-                    CancellationToken.None);
-
-                start = end;
-
-                end = end + Configuration.ReceiveBufferSize;
-            }
-        }
 
         private static async Task<(WebSocketMessageType MessageType, byte[] Bytes, string Text)> ReadContentFromWebSocket(ClientWebSocket webSocket)
         {
@@ -227,6 +298,8 @@ namespace XamarinApp.WebSocket
 
             var mainBuffer = new ArraySegment<byte>(bufferArray, 0, inputResult.Count).Array;
 
+            mainBuffer= CutZerosFromTheEnd(mainBuffer, inputResult.Count);
+
             while (!inputResult.EndOfMessage)
             {
                 bufferArray = new byte[Configuration.ReceiveBufferSize];
@@ -236,10 +309,24 @@ namespace XamarinApp.WebSocket
 
                 var temporaryBuffer = new ArraySegment<byte>(bufferArray, 0, inputResult.Count).Array;
 
+                temporaryBuffer = CutZerosFromTheEnd(temporaryBuffer, inputResult.Count);
+
                 mainBuffer = AppendArrays(mainBuffer, temporaryBuffer);
             }
 
             return (mainBuffer, inputResult.MessageType);
+        }
+
+        private static byte[] CutZerosFromTheEnd(byte[] mainBuffer, int inputResultCount)
+        {
+            var response = new byte[inputResultCount];
+
+            for (int i = 0; i < response.Length; i++)
+            {
+                response[i] = mainBuffer[i];
+            }
+
+            return response;
         }
 
         private static byte[] AppendArrays(byte[] appendThis, byte[] appendWithThis)

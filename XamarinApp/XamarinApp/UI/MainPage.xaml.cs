@@ -1,4 +1,9 @@
-﻿using Xamarin.Forms;
+﻿using System;
+using Android;
+using Android.Content.PM;
+using Android.OS;
+using Xamarin.Forms;
+using Xamarin.Forms.Platform.Android;
 using Xamarin.Forms.Xaml;
 
 namespace XamarinApp.UI

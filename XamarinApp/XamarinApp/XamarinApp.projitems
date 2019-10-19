@@ -55,6 +55,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)UI\NetworkEntryViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Input\DeleteFilePeaceDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Input\DeleteFileDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Input\IncomingBaseDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WebSocket\Model\Dto\Input\IncomingRequestType.cs" />

@@ -51,56 +51,7 @@ namespace XamarinApp.UI
         {
             IsBusy = true;
 
-            Files = new ObservableCollection<VirtualFile>(await VirtualFileService.Instance.FetchFileListFromServer());
-            //todo remove this
-            //Files = new ObservableCollection<VirtualFile>
-            //{
-            //    new VirtualFile
-            //    {
-            //        FileName = "Fájl 1",
-            //        FileSize = 5000,
-            //        UploadedBy = "Bence",
-            //        Created = DateTime.UtcNow,
-            //        MimeType = "application/json",
-            //        FileId = Guid.NewGuid()
-            //    },
-            //    new VirtualFile
-            //    {
-            //        FileName = "Fájl 2",
-            //        FileSize = 1024000,
-            //        UploadedBy = "Sanyi",
-            //        Created = DateTime.UtcNow,
-            //        MimeType = "text/plain",
-            //        FileId = Guid.NewGuid()
-            //    },
-            //    new VirtualFile
-            //    {
-            //        FileName = "Fájl 2",
-            //        FileSize = 1024000,
-            //        UploadedBy = "Sanyi",
-            //        Created = DateTime.UtcNow,
-            //        MimeType = "application/json",
-            //        FileId = Guid.NewGuid()
-            //    },
-            //    new VirtualFile
-            //    {
-            //        FileName = "Fájl 2",
-            //        FileSize = 1024000,
-            //        UploadedBy = "Sanyi",
-            //        Created = DateTime.UtcNow,
-            //        MimeType = "application/json",
-            //        FileId = Guid.NewGuid()
-            //    },
-            //    new VirtualFile
-            //    {
-            //        FileName = "Fájl 2",
-            //        FileSize = 1024000,
-            //        UploadedBy = "Sanyi",
-            //        Created = DateTime.UtcNow,
-            //        MimeType = "application/json",
-            //        FileId = Guid.NewGuid()
-            //    }
-            //};
+            Files = new ObservableCollection<VirtualFile>((await VirtualFileService.Instance.FetchFileListFromServer()).OrderByDescending(x => x.Created));
 
             if (!Files.Any())
             {
@@ -132,12 +83,12 @@ namespace XamarinApp.UI
         public async Task UploadFile(string fileName, byte[] fileDataArray, string mimeType)
         {
             ShowLoading("Uploading file, please wait...");
-            await Task.Delay(3000);
+            //await Task.Delay(3000);
 
-            //todo implement
             await VirtualFileService.Instance.UploadNewFileToServerAsync(fileName, fileDataArray, mimeType);
 
             ShowText = "Updating files, please wait...";
+            await Task.Delay(2000); //todo remoe this
             await FetchFiles();
         }
 

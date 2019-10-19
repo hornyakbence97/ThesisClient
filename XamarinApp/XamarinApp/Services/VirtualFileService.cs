@@ -136,15 +136,6 @@ namespace XamarinApp.Services
 
         public async Task OpenFile(VirtualFile file)
         {
-            //TODO implement
-
-            //string filePath =
-            //    Path.Combine(
-            //        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            //        "valami2.txt");
-
-            //filePath = Path.Combine(Android.OS.Environment.RootDirectory.AbsolutePath, "valami3.txt");
-
             var directory = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
 
             if (!Directory.Exists(directory))
@@ -190,27 +181,67 @@ namespace XamarinApp.Services
 
                 var outputFilePath = Path.Combine(outputFolder, fileId);
 
-                //todo consider this:
+                //todo consider this (i mean cache-ing the data is good)
                 if (File.Exists(outputFilePath))
                 {
                     File.Delete(outputFilePath);
                 }
 
-                using (var outputFileStream = new FileStream(outputFilePath, FileMode.Append))
+                var outp = new byte[0];
+
+                var orderedList = _filePeacesToOpen.OrderBy(x => x.OrderId);
+
+                foreach (var filePeace in orderedList)
                 {
-                    var orderedList = _filePeacesToOpen.OrderBy(x => x.OrderId);
-                    foreach (var filePeace in orderedList)
-                    {
                         var tempFilePath = Path.Combine(filePeacesFolder, filePeace.Id.ToString());
 
                         var tempBytes = File.ReadAllBytes(tempFilePath);
 
-                        outputFileStream.Write(tempBytes, 0, tempBytes.Length);
-                    }
+                        outp = AppendArrays(outp, tempBytes);
                 }
+
+                using (var outputFileStream = new FileStream(outputFilePath, FileMode.Append))
+                {
+                    outputFileStream.Write(outp, 0, outp.Length);
+                }
+
+
+                //using (var outputFileStream = new FileStream(outputFilePath, FileMode.Append))
+                //{
+                //    var orderedList = _filePeacesToOpen.OrderBy(x => x.OrderId);
+                //    foreach (var filePeace in orderedList)
+                //    {
+                //        var tempFilePath = Path.Combine(filePeacesFolder, filePeace.Id.ToString());
+
+                //        var tempBytes = File.ReadAllBytes(tempFilePath);
+
+                //        outputFileStream.Write(tempBytes, 0, tempBytes.Length);
+                //        outputFileStream.Seek(outputFileStream.Length, SeekOrigin.Begin);
+                //    }
+                //}
             }
         }
 
+        private static byte[] AppendArrays(byte[] appendThis, byte[] appendWithThis)
+        {
+            var tempArray = new byte[appendThis.Length + appendWithThis.Length];
+
+            int i = 0;
+
+            while (i < appendThis.Length)
+            {
+                tempArray[i] = appendThis[i];
+                i++;
+            }
+
+            for (int j = 0; j < appendWithThis.Length; j++)
+            {
+                int s = i + j;
+                tempArray[s] = appendWithThis[j];
+            }
+
+            return tempArray;
+        }
 
         private async Task<(List<(Guid Id, int OrderId)> MissingIds, List<(Guid Id, int OrderId)> AllIds)> 
             SendFileOpeningRequestAsync(string filePath, Guid fileId)
@@ -291,6 +322,11 @@ namespace XamarinApp.Services
 
                 var filePath = Path.Combine(directory, fileId.ToString());
 
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+
                 File.WriteAllBytes(filePath, fileBytes);
             });
         }
@@ -343,6 +379,24 @@ namespace XamarinApp.Services
             {
                 //var errorMessage = await response.Content.ReadAsStringAsync();
                 //throw new OperationFailedException($"Failed to send file piece ({id}), API call unsuccessful: " + errorMessage);
+            }
+        }
+
+        public async Task EmptyOpenableFolder()
+        {
+            var folder = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
+
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+
+            foreach (var file in Directory.GetFiles(folder))
+            {
+                if (File.Exists(file) && File.GetCreationTimeUtc(file).AddMinutes(10) < DateTime.UtcNow)
+                {
+                    File.Delete(file);
+                }
             }
         }
     }

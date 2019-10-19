@@ -12,6 +12,8 @@
                 AbsoluteLayout.LayoutBounds="0.5,0.5,-1,-1"/>
             <StackLayout AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" IsVisible="True">
                 <!-- FROM !-->
+                <!--<Button Text="Copy" Clicked="Copy"></Button>-->
+                <Button Text="Refresh" Clicked="Refresh"></Button>
                 <Button Text="Upload" Clicked="UploadNewItem"></Button>
                 <ListView 
                     ItemSelected="FileItemSelected"
