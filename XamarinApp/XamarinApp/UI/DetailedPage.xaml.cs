@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -46,6 +47,16 @@ namespace XamarinApp.UI
         private async void FileItemSelected(object sender, SelectedItemChangedEventArgs e)
         {
             var file = (e.SelectedItem as VirtualFile);
+
+            if (!file.IsConfirmed)
+            {
+                await DisplayAlert(
+                    "Upload in progress", 
+                    "You cannot open this file, because it hasn't uploaded yet",
+                    "OK");
+
+                return;
+            }
 
             var selected = await DisplayActionSheet(
                 title: $"What do you want to do with this item? ({file.FileName})",
@@ -237,6 +248,27 @@ namespace XamarinApp.UI
         private void Refresh(object sender, EventArgs e)
         {
             _vm.FetchFiles();
+        }
+
+    }
+
+    public class InverseBoolConverter : IValueConverter, IMarkupExtension
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return !((bool)value);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value;
+            //throw new NotImplementedException();
+        }
+
+
+        public object ProvideValue(IServiceProvider serviceProvider)
+        {
+            return this;
         }
     }
 }

@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="XamarinApp.UI.DetailedPage">
+             x:Class="XamarinApp.UI.DetailedPage"
+             xmlns:helpers="clr-namespace:XamarinApp.UI;">
     <ContentPage.Content>
         <AbsoluteLayout HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" IsVisible="True">
             <Label
@@ -27,11 +28,15 @@
                             <ViewCell>
                                 <StackLayout BackgroundColor="White" Padding="20">
 
-                                    <Label FontSize="Title" Text="{Binding FileName}"></Label>
-                                    <Label FontSize="Body" Text="{Binding MimeType}"></Label>
-                                    <Label FontSize="Body" Text="{Binding GetFileSize}"></Label>
-                                    <Label FontSize="Body" Text="{Binding GetUploadTime}"></Label>
-                                    <Label FontSize="Body" Text="{Binding GetUploadedBy}"></Label>
+                                    <Label FontSize="Small" Text="{Binding FileName}"></Label>
+                                    <StackLayout Orientation="Horizontal">
+                                        <ActivityIndicator Scale="0.5" IsRunning="True" Color ="Red" IsVisible="{Binding IsConfirmed, Converter={helpers:InverseBoolConverter}}"/>
+                                        <Label Text="Upload in progress.." IsVisible="{Binding IsConfirmed, Converter={helpers:InverseBoolConverter}}"></Label>
+                                    </StackLayout>
+                                    <Label FontSize="Micro" Text="{Binding MimeType}"></Label>
+                                    <Label FontSize="Micro" Text="{Binding GetFileSize}"></Label>
+                                    <Label FontSize="Micro" Text="{Binding GetUploadTime}"></Label>
+                                    <Label FontSize="Micro" Text="{Binding GetUploadedBy}"></Label>
 
                                     <!--<Label FontSize="Medium" Text="{Binding Datum, StringFormat='{0:yyyy-MM-dd HH:mm}'}"></Label>
                                     <Label Text="{Binding TipusSzoveg}"></Label>
