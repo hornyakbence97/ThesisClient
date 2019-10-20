@@ -33,7 +33,6 @@ namespace XamarinApp.Droid
                 action: () => { WebsocketService.Instance.StartService(cancellationTokenSource.Token).Wait(); },
                 cancellationToken: cancellationTokenSource.Token);
 
-
             return StartCommandResult.Sticky;
         }
 

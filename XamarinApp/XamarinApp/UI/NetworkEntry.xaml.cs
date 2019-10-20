@@ -28,8 +28,6 @@ namespace XamarinApp.UI
 
         private void _vm_CanContinueEvent(Guid networkId)
         {
-            VirtualFileService.Instance.SendFilesToServer();
-
             MessagingCenter.Send(EventsClass.Instance, Events.Events.StartService);
 
             Navigation.PushAsync(new DetailedPage());

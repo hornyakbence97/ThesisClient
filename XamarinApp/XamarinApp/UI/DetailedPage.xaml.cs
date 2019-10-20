@@ -81,6 +81,7 @@ namespace XamarinApp.UI
 
             if (isRefreshNeeded)
             {
+                await Task.Delay(TimeSpan.FromSeconds(1));
                 await _vm.FetchFiles();
             }
         }

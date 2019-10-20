@@ -17,6 +17,8 @@ namespace XamarinApp.WebSocket
     class WebSocketProcesser
     {
         private ClientWebSocket _clientWebSocket;
+        private Object _lockObject = new object();
+        private bool isPeriodicalCheckRunning = false;
 
         public WebSocketProcesser()
         {
@@ -27,12 +29,50 @@ namespace XamarinApp.WebSocket
 
         public async Task StartTask()
         {
+            if (!isPeriodicalCheckRunning)
+            {
+                StartPeriodicallyCheck();
+            }
+
             if (_clientWebSocket == null || _clientWebSocket.State != WebSocketState.Open)
             {
-                await ConnectAndAuthenticate();
+                try
+                {
+                    await ConnectAndAuthenticate();
 
-                await GoIdle();
+                    await VirtualFileService.Instance.SendFilesToServer();
+
+                    await GoIdle();
+                }
+                catch (System.Exception e)
+                {
+                }
             }
+        }
+
+        private async Task StartPeriodicallyCheck()
+        {
+            isPeriodicalCheckRunning = true;
+
+            await Task.Delay(TimeSpan.FromSeconds(10));
+
+            try
+            {
+                //sending ping
+                await WriteAsBinaryToWebSocket(new byte[0], _clientWebSocket, WebSocketMessageType.Binary);
+            }
+            catch (System.Exception e)
+            {
+                _clientWebSocket = new ClientWebSocket();
+                _clientWebSocket.Options.KeepAliveInterval = Configuration.KeepAliveInterval;
+                _clientWebSocket.Options.SetBuffer(
+                    receiveBufferSize: Configuration.ReceiveBufferSize,
+                    sendBufferSize: Configuration.ReceiveBufferSize);
+
+                StartTask();
+            }
+
+            StartPeriodicallyCheck();
         }
 
         private async Task ConnectAndAuthenticate()
@@ -64,7 +104,11 @@ namespace XamarinApp.WebSocket
                         await ProcessIncomingRequest(readResult.Text);
                         break;
                     case WebSocketMessageType.Binary:
-                        await ProcessSaveFileRequest(readResult.Bytes);
+                        if (readResult.Bytes.Length > 0)
+                        {
+                            await ProcessSaveFileRequest(readResult.Bytes);
+                        }
+
                         break;
                     case WebSocketMessageType.Close:
                         break;
@@ -248,15 +292,18 @@ namespace XamarinApp.WebSocket
             await WriteAsBinaryToWebSocket(bytes, webSocket, WebSocketMessageType.Text);
         }
 
-        private static async Task WriteAsBinaryToWebSocket(byte[] bytes, ClientWebSocket webSocket, WebSocketMessageType type)
+        private async Task WriteAsBinaryToWebSocket(byte[] bytes, ClientWebSocket webSocket, WebSocketMessageType type)
         {
-            await webSocket
+            lock (_lockObject)
+            {
+                webSocket
                     .SendAsync(
                         new ArraySegment<byte>(bytes, 0, bytes.Length),
                         type,
                         true,
-                        CancellationToken.None);
+                        CancellationToken.None).Wait();
             }
+        }
 
         private static async Task<(WebSocketMessageType MessageType, byte[] Bytes, string Text)> ReadContentFromWebSocket(ClientWebSocket webSocket)
         {
