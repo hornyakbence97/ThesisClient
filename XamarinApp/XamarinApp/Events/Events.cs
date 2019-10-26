@@ -12,6 +12,8 @@
         public static string StopService = "StopService";
         public static string FileReceived = "FileReceived";
 
+        public static string StartUploadService = "StartUploadService";
+
         public static string Fetch = "Fetch";
     }
 }

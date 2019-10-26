@@ -14,6 +14,7 @@
             <StackLayout AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" IsVisible="True">
                 <!-- FROM !-->
                 <!--<Button Text="Copy" Clicked="Copy"></Button>-->
+                <Image Source="{Binding QrCode}"/>
                 <Button Text="Refresh" Clicked="Refresh"></Button>
                 <Button Text="Upload" Clicked="UploadNewItem"></Button>
                 <ListView 
@@ -52,6 +53,7 @@
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
+                <Button Text="{Binding QrCodeButtonText}" IsEnabled="{Binding IsQrButtonEnabled}" Clicked="GenerateQrCode"></Button>
                 <!-- TO !-->
             </StackLayout>
             <StackLayout IsVisible="True" Padding="12"

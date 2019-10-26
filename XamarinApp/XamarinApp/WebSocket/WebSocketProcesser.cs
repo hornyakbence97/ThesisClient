@@ -54,10 +54,15 @@ namespace XamarinApp.WebSocket
         {
             isPeriodicalCheckRunning = true;
 
-            await Task.Delay(TimeSpan.FromSeconds(10));
-
             try
             {
+                if (_clientWebSocket.State == WebSocketState.Connecting)
+                {
+                    while (_clientWebSocket.State == WebSocketState.Connecting)
+                    {
+                        await Task.Delay(100);
+                    }
+                }
                 //sending ping
                 await WriteAsBinaryToWebSocket(new byte[0], _clientWebSocket, WebSocketMessageType.Binary);
             }
@@ -71,6 +76,8 @@ namespace XamarinApp.WebSocket
 
                 StartTask();
             }
+
+            await Task.Delay(TimeSpan.FromSeconds(10));
 
             StartPeriodicallyCheck();
         }

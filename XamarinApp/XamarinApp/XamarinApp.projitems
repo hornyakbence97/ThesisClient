@@ -29,8 +29,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\DeleteFileDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\NetworkCreateInput.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Dto\Output\UploadFileDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\UploadServiceModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\VirtualFile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\VirtualFilePiece.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Helpers\Result.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\NetworkService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\VirtualFileService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\UserService.cs" />

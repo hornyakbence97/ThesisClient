@@ -15,6 +15,7 @@ using XamarinApp.Exception;
 using XamarinApp.Models;
 using XamarinApp.Models.Dto.Input;
 using XamarinApp.Models.Dto.Output;
+using XamarinApp.Services.Helpers;
 
 namespace XamarinApp.Services
 {
@@ -354,7 +355,7 @@ namespace XamarinApp.Services
             return 0;
         }
 
-        public async Task UploadNewFileToServerAsync(string fileName, byte[] fileBytes, string mimeType)
+        public async Task<Result> UploadNewFileToServerAsync(string fileName, byte[] fileBytes, string mimeType)
         {
             var dto = new UploadFileDto
             {
@@ -371,6 +372,8 @@ namespace XamarinApp.Services
             var stringContent = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8);
             content.Add(stringContent, "dto");
 
+            //_client.Timeout = TimeSpan.FromMinutes(10);
+
             var response = await _client.PostAsync(
                 Configuration.UploadFileRelativeEndpoint,
                 content,
@@ -380,9 +383,25 @@ namespace XamarinApp.Services
             var respText = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
-                //var errorMessage = await response.Content.ReadAsStringAsync();
-                //throw new OperationFailedException($"Failed to send file piece ({id}), API call unsuccessful: " + errorMessage);
+                string errorMessage = "Unknown error.";
+
+                try
+                {
+                    errorMessage = await response.Content.ReadAsStringAsync();
+                }
+                catch (System.Exception)
+                {
+                }
+
+                return new Result
+                {
+                    IsSuccess = false,
+                    ErrorMessage = $"Failed to upload file. Error: {errorMessage}"
+                };
+
             }
+
+            return new Result {IsSuccess = true};
         }
 
         public async Task EmptyOpenableFolder()

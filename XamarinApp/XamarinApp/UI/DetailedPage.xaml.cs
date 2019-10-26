@@ -4,19 +4,26 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Android.Graphics;
 using Android.Provider;
 using Android.Support.V4.Content;
 using Android.Widget;
 using Java.IO;
+using Java.Nio;
 using Plugin.FilePicker;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 using XamarinApp.Droid;
+using XamarinApp.Exception;
 using XamarinApp.Models;
 using XamarinApp.Services;
 using XamarinApp.Services.XamarinSpecific;
+using ZXing;
+using ZXing.QrCode;
+using ZXing.Rendering;
 using Console = System.Console;
 using File = System.IO.File;
+using Path = System.IO.Path;
 using VisualElement = Xamarin.Forms.PlatformConfiguration.iOSSpecific.VisualElement;
 
 namespace XamarinApp.UI
@@ -136,17 +143,27 @@ namespace XamarinApp.UI
                 {
                     var mimeType = MimeTypes.GetMimeType(file.FilePath);
 
-                    await _vm.UploadFile(file.FileName, file.DataArray, mimeType);
+                    var result = await _vm.UploadFile(file.FileName, file.DataArray, mimeType);
 
-                    Toast.MakeText(Android.App.Application.Context, "Upload in progress. Please wait a few minutes",
-                        ToastLength.Short);
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        Toast.MakeText(Android.App.Application.Context, "Upload in progress. Please wait a few minutes",
+                            ToastLength.Long);
+                    });
+
+                    if (!result.IsSuccess)
+                    {
+                        await DisplayAlert("Error", result.ErrorMessage, "Ok");
+                    }
+
+                    await _vm.FetchFiles();
                 }
 
                 //await DisplayAlert("hh", file.FileName, "Ok");
             }
             catch (System.Exception ex)
             {
-                //throw;
+                await DisplayAlert("Error", ex.Message, "Ok");
             }
         }
 
@@ -250,6 +267,10 @@ namespace XamarinApp.UI
             _vm.FetchFiles();
         }
 
+        private void GenerateQrCode(object sender, EventArgs e)
+        {
+            _vm.ShowQrCode();
+        }
     }
 
     public class InverseBoolConverter : IValueConverter, IMarkupExtension
