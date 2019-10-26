@@ -1,4 +1,5 @@
 ﻿using System.Net.Http;
+using XamarinApp.Models;
 
 namespace XamarinApp.Services
 {
@@ -8,6 +9,8 @@ namespace XamarinApp.Services
         private static readonly object padlock = new object();
 
         private HttpClient _client;
+
+        public UploadServiceModel UploadModel { get; set; }
 
         EventsClass()
         {

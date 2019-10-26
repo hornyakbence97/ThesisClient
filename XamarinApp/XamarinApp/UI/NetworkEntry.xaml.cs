@@ -1,8 +1,11 @@
 ﻿using System;
+using Android.App;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 using XamarinApp.Services;
+using ZXing.Net.Mobile.Forms;
 
+[assembly: UsesPermission(Android.Manifest.Permission.Flashlight)]
 namespace XamarinApp.UI
 {
 	[XamlCompilation(XamlCompilationOptions.Compile)]
@@ -46,6 +49,23 @@ namespace XamarinApp.UI
         private void CreateNetwork(object sender, EventArgs e)
         {
             _vm.CreateNetwork();
+        }
+
+        private async void QrScanned(object sender, EventArgs e)
+        {
+            //var scanner = DependencyService.Get<IQrScanningService>();
+
+            //var result = await scanner.ScanAsync();
+
+            var scanPage = new ZXingScannerPage();
+            NavigationPage.SetHasNavigationBar(scanPage, false);
+            scanPage.OnScanResult += (result) => {
+                scanPage.IsScanning = false;
+                _vm.NetworkId = result.Text;
+                Device.BeginInvokeOnMainThread(async () => await Navigation.PopAsync());
+            };
+
+            await Navigation.PushAsync(scanPage);
         }
     }
 }

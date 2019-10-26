@@ -3,8 +3,15 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Android.Graphics;
+using Xamarin.Forms;
 using XamarinApp.Models;
 using XamarinApp.Services;
+using ZXing;
+using ZXing.Mobile;
+using ZXing.QrCode;
+using ZXing.Rendering;
+using Result = XamarinApp.Services.Helpers.Result;
 
 namespace XamarinApp.UI
 {
@@ -14,6 +21,28 @@ namespace XamarinApp.UI
         private bool _isNoAnyFile;
         private bool _isEmptyWarningEnabled;
         private VirtualFile _file;
+        private ImageSource _qrCode;
+        private string _qrCodeButtonText;
+        private bool _isQrButtonEnabled;
+
+        public bool IsQrButtonEnabled
+        {
+            get => _isQrButtonEnabled;
+            set { _isQrButtonEnabled = value; OnPropertyChanged();}
+        }
+
+
+        public string QrCodeButtonText
+        {
+            get => _qrCodeButtonText;
+            set { _qrCodeButtonText = value; OnPropertyChanged();}
+        }
+
+        public ImageSource QrCode
+        {
+            get => _qrCode;
+            set { _qrCode = value; OnPropertyChanged();}
+        }
 
         public bool IsEmptyWarningEnabled
         {
@@ -41,6 +70,9 @@ namespace XamarinApp.UI
 
         public DetailedPageViewModel()
         {
+            IsQrButtonEnabled = true;
+            QrCodeButtonText = "Show Network ID QR Code";
+            QrCode = null;
             IsNoAnyFile = true;
             IsEmptyWarningEnabled = true;
             IsBusy = true;
@@ -49,7 +81,7 @@ namespace XamarinApp.UI
 
         public async Task FetchFiles()
         {
-            IsBusy = true;
+            ShowLoading("Fetching files...");
 
             Files = new ObservableCollection<VirtualFile>((await VirtualFileService.Instance.FetchFileListFromServer()).OrderByDescending(x => x.Created));
 
@@ -80,16 +112,17 @@ namespace XamarinApp.UI
             await VirtualFileService.Instance.OpenFile(file);
         }
 
-        public async Task UploadFile(string fileName, byte[] fileDataArray, string mimeType)
+        public async Task<Result> UploadFile(string fileName, byte[] fileDataArray, string mimeType)
         {
             ShowLoading("Uploading file, please wait...");
             //await Task.Delay(3000);
 
-            await VirtualFileService.Instance.UploadNewFileToServerAsync(fileName, fileDataArray, mimeType);
+            var result = await VirtualFileService.Instance.UploadNewFileToServerAsync(fileName, fileDataArray, mimeType);
 
-            ShowText = "Updating files, please wait...";
-            await Task.Delay(2000); //todo remoe this
-            await FetchFiles();
+            //ShowLoading("Updating files, please wait...");
+            //await Task.Delay(2000); //todo remoe this
+
+            return result;
         }
 
         private void ShowLoading(string loadingText)
@@ -101,6 +134,47 @@ namespace XamarinApp.UI
             IsEmptyWarningEnabled = false;
 
             ShowText = loadingText;
+        }
+
+        public async  Task ShowQrCode()
+        {
+            IsQrButtonEnabled = false;
+
+            var dataText = UserService.Instance.GetCurrentUser().NetworkId.Value.ToString();
+
+            var writer = new QRCodeWriter();
+            var bitMatrix = writer.encode(
+                dataText,
+                BarcodeFormat.QR_CODE,
+                600,
+                600);
+
+            var bit = new BitmapRenderer();
+            var image = bit.Render(bitMatrix, BarcodeFormat.QR_CODE, dataText);
+
+            byte[] bytes;
+            using (var stream = new MemoryStream())
+            {
+                image.Compress(Android.Graphics.Bitmap.CompressFormat.Png, 0, stream);
+                bytes = stream.ToArray();
+            }
+
+            var imageSource = ImageSource.FromStream(() => new MemoryStream(bytes, 0, bytes.Length));
+
+            QrCode = imageSource;
+
+            for (int i = 0; i < 10; i++)
+            {
+                QrCodeButtonText = $"Show Network ID QR Code ({10-i})";
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+
+            QrCodeButtonText = "Show Network ID QR Code";
+
+            QrCode = null;
+
+            IsQrButtonEnabled = true;
         }
     }
 }

@@ -8,9 +8,9 @@
                 <!-- FROM !-->
                 <StackLayout
                     VerticalOptions="CenterAndExpand" >
-                    <StackLayout Orientation="Horizontal">
-                        <Label Text="Hello "></Label>
-                        <Label Text="{Binding Path=UserName}"/>
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
+                        <Label FontSize="Medium" Text="Hello "></Label>
+                        <Label FontSize="Medium" Text="{Binding Path=UserName}"/>
                     </StackLayout>
                     <Label Text="Please login to a network:"></Label>
                     <StackLayout Orientation="Horizontal">
@@ -18,6 +18,7 @@
                         <Entry
                             Text="{Binding Path=NetworkId, Mode=TwoWay}"
                             HorizontalOptions="FillAndExpand"></Entry>
+                        <Button Text="Scan QR" Clicked="QrScanned"></Button>
                     </StackLayout>
                     <StackLayout Orientation="Horizontal">
                         <Label Text="Password: "></Label>
@@ -27,7 +28,7 @@
                             HorizontalOptions="FillAndExpand"></Entry>
                     </StackLayout>
                     <Button Text="Login" Clicked="LoginNetwork"></Button>
-                    <Label Text="Or create a new one:"></Label>
+                    <Label Text="Or create a new network:"></Label>
                     <StackLayout Orientation="Horizontal">
                         <Label Text="Network Name: "></Label>
                         <Entry
