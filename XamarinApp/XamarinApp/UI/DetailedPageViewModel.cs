@@ -176,5 +176,15 @@ namespace XamarinApp.UI
 
             IsQrButtonEnabled = true;
         }
+
+        public async Task RemoveOpenableFolder()
+        {
+            await VirtualFileService.Instance.EmptyOpenableFolder();
+        }
+
+        public double GetCacheSize()
+        {
+            return VirtualFileService.Instance.GetOpenableFolderSize();
+        }
     }
 }

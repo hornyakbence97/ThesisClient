@@ -18,7 +18,7 @@
                 <Button Text="Refresh" Clicked="Refresh"></Button>
                 <Button Text="Upload" Clicked="UploadNewItem"></Button>
                 <ListView 
-                    ItemSelected="FileItemSelected"
+                    ItemTapped="FileItemSelected"
                     x:Name="_filesListView"
                     HasUnevenRows="True"
                     SeparatorColor="Red"
@@ -54,6 +54,7 @@
                     </ListView.ItemTemplate>
                 </ListView>
                 <Button Text="{Binding QrCodeButtonText}" IsEnabled="{Binding IsQrButtonEnabled}" Clicked="GenerateQrCode"></Button>
+                <Button Text="Clean cache" Clicked="EmptyOpenableFolder"></Button>
                 <!-- TO !-->
             </StackLayout>
             <StackLayout IsVisible="True" Padding="12"

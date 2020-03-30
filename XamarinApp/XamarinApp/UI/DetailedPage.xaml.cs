@@ -51,9 +51,9 @@ namespace XamarinApp.UI
             _vm.FetchFiles();
         }
 
-        private async void FileItemSelected(object sender, SelectedItemChangedEventArgs e)
+        private async void FileItemSelected(object sender, ItemTappedEventArgs e)
         {
-            var file = (e.SelectedItem as VirtualFile);
+            var file = (e.Item as VirtualFile);
 
             if (!file.IsConfirmed)
             {
@@ -104,7 +104,7 @@ namespace XamarinApp.UI
             }
         }
 
-        private void FileReceived(string fileId)
+        private async void FileReceived(string fileId)
         {
             if (fileId == _vm?.File?.FileId.ToString())
             {
@@ -112,13 +112,14 @@ namespace XamarinApp.UI
 
                 if (!FileOpener.Open(_vm.File.FileId.ToString(), _vm.File.MimeType, Configuration.OpenableTempFolderName))
                 {
-                    DisplayAlert(
+                    await DisplayAlert(
                         "No application",
                         $"You don not have an application that can open the following file type:  '{_vm.File.MimeType}'. Download a program that can handle this file type, then try again.",
                         "Ok");
                 }
             }
 
+            await Task.Delay(1000);
             _vm.FetchFiles();
         }
 
@@ -155,6 +156,8 @@ namespace XamarinApp.UI
                     {
                         await DisplayAlert("Error", result.ErrorMessage, "Ok");
                     }
+
+                    await Task.Delay(2000);
 
                     await _vm.FetchFiles();
                 }
@@ -270,6 +273,24 @@ namespace XamarinApp.UI
         private void GenerateQrCode(object sender, EventArgs e)
         {
             _vm.ShowQrCode();
+        }
+
+        private async void EmptyOpenableFolder(object sender, EventArgs e)
+        {
+            var size = _vm.GetCacheSize();
+
+            var answer = await DisplayAlert(
+                "Confirm",
+                $"Are you sure you want to delete cache ({size} MB)?",
+                "Yes",
+                "Cancel");
+
+            if (answer)
+            {
+                await _vm.RemoveOpenableFolder();
+
+                Toast.MakeText(Android.App.Application.Context, "Cache cleaned!", ToastLength.Short).Show();
+            }
         }
     }
 

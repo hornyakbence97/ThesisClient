@@ -18,6 +18,7 @@ namespace XamarinApp.WebSocket
     {
         private ClientWebSocket _clientWebSocket;
         private Object _lockObject = new object();
+        private object _lockObjectRead = new object();
         private bool isPeriodicalCheckRunning = false;
 
         public WebSocketProcesser()
@@ -94,7 +95,7 @@ namespace XamarinApp.WebSocket
                 Token2 = user.Token2
             };
 
-            await _clientWebSocket.ConnectAsync(Configuration.BaseUrlWebSocket, CancellationToken.None);
+            await _clientWebSocket.ConnectAsync(Configuration.BaseUrlWebSocket, new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token);
 
             await WriteStringToWebSocket(JsonConvert.SerializeObject(authenticationDo), _clientWebSocket);
         }
@@ -308,11 +309,12 @@ namespace XamarinApp.WebSocket
                         new ArraySegment<byte>(bytes, 0, bytes.Length),
                         type,
                         true,
-                        CancellationToken.None).Wait();
+                        CancellationToken.None)
+                    .Wait(TimeSpan.FromSeconds(5));
             }
         }
 
-        private static async Task<(WebSocketMessageType MessageType, byte[] Bytes, string Text)> ReadContentFromWebSocket(ClientWebSocket webSocket)
+        private async Task<(WebSocketMessageType MessageType, byte[] Bytes, string Text)> ReadContentFromWebSocket(ClientWebSocket webSocket)
         {
             var readResult = await ReadBinaryContentFromWebSocket(webSocket);
 
@@ -325,32 +327,43 @@ namespace XamarinApp.WebSocket
             return ret;
         }
 
-        private static async Task<(byte[] Bytes, WebSocketMessageType MessageType)> ReadBinaryContentFromWebSocket(ClientWebSocket webSocket)
+        private async Task<(byte[] Bytes, WebSocketMessageType MessageType)> ReadBinaryContentFromWebSocket(ClientWebSocket webSocket)
         {
-            var bufferArray = new byte[Configuration.ReceiveBufferSize];
-
-            var inputResult = await webSocket
-                .ReceiveAsync(new ArraySegment<byte>(bufferArray), CancellationToken.None);
-
-            var mainBuffer = new ArraySegment<byte>(bufferArray, 0, inputResult.Count).Array;
-
-            mainBuffer= CutZerosFromTheEnd(mainBuffer, inputResult.Count);
-
-            while (!inputResult.EndOfMessage)
+            lock (_lockObjectRead)
             {
-                bufferArray = new byte[Configuration.ReceiveBufferSize];
+                try
+                {
+                    var bufferArray = new byte[Configuration.ReceiveBufferSize];
 
-                inputResult = await webSocket
-                    .ReceiveAsync(new ArraySegment<byte>(bufferArray), CancellationToken.None);
+                    var inputResult = webSocket
+                        .ReceiveAsync(new ArraySegment<byte>(bufferArray), CancellationToken.None)
+                        .Result;
 
-                var temporaryBuffer = new ArraySegment<byte>(bufferArray, 0, inputResult.Count).Array;
+                    var mainBuffer = new ArraySegment<byte>(bufferArray, 0, inputResult.Count).Array;
 
-                temporaryBuffer = CutZerosFromTheEnd(temporaryBuffer, inputResult.Count);
+                    mainBuffer= CutZerosFromTheEnd(mainBuffer, inputResult.Count);
 
-                mainBuffer = AppendArrays(mainBuffer, temporaryBuffer);
+                    while (!inputResult.EndOfMessage)
+                    {
+                        bufferArray = new byte[Configuration.ReceiveBufferSize];
+
+                        inputResult = webSocket
+                            .ReceiveAsync(new ArraySegment<byte>(bufferArray), CancellationToken.None).Result;
+
+                        var temporaryBuffer = new ArraySegment<byte>(bufferArray, 0, inputResult.Count).Array;
+
+                        temporaryBuffer = CutZerosFromTheEnd(temporaryBuffer, inputResult.Count);
+
+                        mainBuffer = AppendArrays(mainBuffer, temporaryBuffer);
+                    }
+
+                    return (mainBuffer, inputResult.MessageType);
+                }
+                catch (System.Exception e)
+                {
+                    return default;
+                }
             }
-
-            return (mainBuffer, inputResult.MessageType);
         }
 
         private static byte[] CutZerosFromTheEnd(byte[] mainBuffer, int inputResultCount)
