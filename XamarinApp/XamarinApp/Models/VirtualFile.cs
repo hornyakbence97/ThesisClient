@@ -15,7 +15,7 @@ namespace XamarinApp.Models
         public string ModifiedBy { get; set; }
         public bool IsConfirmed { get; set; }
 
-        public string GetFileSize => FileSize + " bytes";
+        public string GetFileSize => Math.Round((double)FileSize / 1024 / 1024, MidpointRounding.ToEven)  + " MB";
         public string GetUploadTime => Created.ToString("g");
         public string GetUploadedBy => "Uploaded by: " + UploadedBy;
     }

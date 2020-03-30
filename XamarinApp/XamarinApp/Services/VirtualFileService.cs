@@ -28,6 +28,7 @@ namespace XamarinApp.Services
         private ConcurrentDictionary<string, string> _needToReceiveTheseFilePeaces = new ConcurrentDictionary<string, string>();
         private bool _isLastFilePeace = false;
         private List<(Guid Id, int OrderId)> _filePeacesToOpen;
+        private object _lockObjectSaveFilePeace = new object();
 
         VirtualFileService()
         {
@@ -139,15 +140,25 @@ namespace XamarinApp.Services
         {
             var directory = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
 
-            if (!Directory.Exists(directory))
+            lock (_lockObjectSaveFilePeace)
             {
-                Directory.CreateDirectory(directory);
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
             }
 
             //write all data to this file:
-            var filePath = Path.Combine(directory, file.FileName);
+            var filePath = Path.Combine(directory, file.FileId.ToString());
 
-            var filePiecesThatNeedToForThisFileToOpen = await SendFileOpeningRequestAsync(filePath, file.FileId);
+            if (File.Exists(filePath))
+            {
+                MessagingCenter.Send<string>(file.FileId.ToString(), Events.Events.FileReceived);
+
+                return;
+            }
+
+            var filePiecesThatNeedToForThisFileToOpen = await SendFileOpeningRequestAsync(file.FileId);
             _filePeacesToOpen = filePiecesThatNeedToForThisFileToOpen.AllIds; //all the peaces
 
             _isLastFilePeace = false;
@@ -183,9 +194,12 @@ namespace XamarinApp.Services
                 var outputFilePath = Path.Combine(outputFolder, fileId);
 
                 //todo consider this (i mean cache-ing the data is good)
-                if (File.Exists(outputFilePath))
+                lock (_lockObjectSaveFilePeace)
                 {
-                    File.Delete(outputFilePath);
+                    if (File.Exists(outputFilePath))
+                    {
+                        File.Delete(outputFilePath);
+                    }
                 }
 
                 var outp = new byte[0];
@@ -196,14 +210,22 @@ namespace XamarinApp.Services
                 {
                         var tempFilePath = Path.Combine(filePeacesFolder, filePeace.Id.ToString());
 
-                        var tempBytes = File.ReadAllBytes(tempFilePath);
+                        byte[] tempBytes;
+
+                        lock (_lockObjectSaveFilePeace)
+                        {
+                            tempBytes = File.ReadAllBytes(tempFilePath);
+                        }
 
                         outp = AppendArrays(outp, tempBytes);
                 }
 
-                using (var outputFileStream = new FileStream(outputFilePath, FileMode.Append))
+                lock (_lockObjectSaveFilePeace)
                 {
-                    outputFileStream.Write(outp, 0, outp.Length);
+                    using (var outputFileStream = new FileStream(outputFilePath, FileMode.Append))
+                    {
+                        outputFileStream.Write(outp, 0, outp.Length);
+                    }
                 }
 
 
@@ -245,7 +267,7 @@ namespace XamarinApp.Services
         }
 
         private async Task<(List<(Guid Id, int OrderId)> MissingIds, List<(Guid Id, int OrderId)> AllIds)> 
-            SendFileOpeningRequestAsync(string filePath, Guid fileId)
+            SendFileOpeningRequestAsync(Guid fileId)
         {
             var user = UserService.Instance.GetCurrentUser();
 
@@ -272,19 +294,46 @@ namespace XamarinApp.Services
             {
                 var directory = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
 
-                if (!Directory.Exists(directory))
+                lock (_lockObjectSaveFilePeace)
                 {
-                    Directory.CreateDirectory(directory);
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
                 }
 
                 var filePath = Path.Combine(directory, filePieceId.ToString());
 
                 if (!File.Exists(filePath))
                 {
-                    throw new OperationFailedException("The given file piece does not exists in this phone");
+                    Task.Delay(1000);
+
+                    if (!File.Exists(filePath))
+                    {
+                        Task.Delay(1000);
+
+                        if (!File.Exists(filePath))
+                        {
+                            Task.Delay(1000);
+
+                            if (!File.Exists(filePath))
+                            {
+                                Console.WriteLine($"File path not found {filePath}");
+
+                                throw new OperationFailedException("The given file piece does not exists in this phone");
+                            }
+                        }
+                    }
                 }
 
-                return File.ReadAllBytes(filePath);
+                byte[] resp;
+
+                lock (_lockObjectSaveFilePeace)
+                {
+                    resp = File.ReadAllBytes(filePath);
+                }
+
+                return resp;
             });
         }
 
@@ -316,19 +365,28 @@ namespace XamarinApp.Services
             {
                 var directory = Path.Combine(Configuration.RootFolder, Configuration.FilePiecesFolderName);
 
-                if (!Directory.Exists(directory))
+                lock (_lockObjectSaveFilePeace)
                 {
-                    Directory.CreateDirectory(directory);
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
                 }
 
                 var filePath = Path.Combine(directory, fileId.ToString());
 
-                if (File.Exists(filePath))
+                lock (_lockObjectSaveFilePeace)
                 {
-                    File.Delete(filePath);
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                    }
                 }
 
-                File.WriteAllBytes(filePath, fileBytes);
+                lock (_lockObjectSaveFilePeace)
+                {
+                    File.WriteAllBytes(filePath, fileBytes);
+                }
             });
         }
 
@@ -408,9 +466,12 @@ namespace XamarinApp.Services
         {
             var folder = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
 
-            if (!Directory.Exists(folder))
+            lock (_lockObjectSaveFilePeace)
             {
-                Directory.CreateDirectory(folder);
+                if (!Directory.Exists(folder))
+                {
+                    Directory.CreateDirectory(folder);
+                }
             }
 
             foreach (var file in Directory.GetFiles(folder))
@@ -420,6 +481,38 @@ namespace XamarinApp.Services
                     File.Delete(file);
                 }
             }
+        }
+
+        public double GetOpenableFolderSize()
+        {
+            var folder = Path.Combine(Configuration.RootFolder, Configuration.OpenableTempFolderName);
+
+            lock (_lockObjectSaveFilePeace)
+            {
+                if (!Directory.Exists(folder))
+                {
+                    Directory.CreateDirectory(folder);
+
+                    return 0.0;
+                }
+            }
+
+            long resp = 0;
+
+            lock (_lockObjectSaveFilePeace)
+            {
+                foreach (var file in Directory.GetFiles(folder))
+                {
+                    if (File.Exists(file))
+                    {
+                        resp += new FileInfo(file).Length;
+                    }
+                }
+            }
+
+            double response = (double)resp / 1024 / 1024;
+
+            return Math.Round(response, MidpointRounding.ToEven);
         }
     }
 }
